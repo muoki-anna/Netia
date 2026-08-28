@@ -22,7 +22,7 @@ const LoginPage = () => {
       await login(email, password);
       navigate(from, { replace: true });
     } catch (err) {
-      setError('Could not sign in. Check your email and password.');
+      setError(err?.response?.message || 'Could not sign in. Check your email and password.');
     } finally {
       setLoading(false);
     }

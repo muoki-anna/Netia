@@ -24,7 +24,9 @@ const SignupPage = () => {
       await signup(email, password, name);
       navigate(PLANS_PATH, { replace: true });
     } catch (err) {
-      setError('Could not create your account. Try a different email.');
+      const details = err?.response?.data;
+      const firstFieldError = details && Object.values(details)[0]?.message;
+      setError(firstFieldError || err?.response?.message || 'Could not create your account. Try a different email.');
     } finally {
       setLoading(false);
     }

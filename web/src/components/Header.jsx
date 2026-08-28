@@ -29,10 +29,11 @@ const shopLinks = [
 
 const Header = ({ onCartOpen }) => {
   const { cartItems } = useCart();
-  const { isAuthenticated, logout } = useAuth();
+  const { currentUser, isAuthenticated, logout } = useAuth();
   const location = useLocation();
   const [isDark, setIsDark] = useState(() => localStorage.getItem('netiax-theme') === 'dark');
   const count = cartItems.reduce((n, i) => n + i.quantity, 0);
+  const firstName = currentUser?.name?.trim().split(/\s+/)[0] || currentUser?.email?.split('@')[0] || 'Account';
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', isDark);
@@ -80,11 +81,23 @@ const Header = ({ onCartOpen }) => {
           </button>
 
           <div className="hidden items-center gap-1 sm:flex">
-            {isAuthenticated ? <>
-              <Link to="/rewards" className="rounded-full px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-primary">Rewards</Link>
-              <Link to="/subscriptions" className="rounded-full p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-primary" aria-label="My account"><User className="h-4 w-4" /></Link>
-              <button onClick={logout} aria-label="Log out" className="rounded-full p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-primary"><LogOut className="h-4 w-4" /></button>
-            </> : <>
+            {isAuthenticated ? <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button type="button" className="inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm font-semibold text-muted-foreground transition-colors hover:bg-muted hover:text-primary" aria-label="Open account menu">
+                  <User className="h-4 w-4" />
+                  <span className="max-w-24 truncate">{firstName}</span>
+                  <ChevronDown className="h-4 w-4" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuLabel>Signed in as {firstName}</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild><Link to="/subscriptions"><User className="h-4 w-4" /> My account</Link></DropdownMenuItem>
+                <DropdownMenuItem asChild><Link to="/rewards">Rewards</Link></DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onSelect={logout} className="text-destructive focus:text-destructive"><LogOut className="h-4 w-4" /> Sign out</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu> : <>
               <Link to="/login" className="rounded-full px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-primary">Sign in</Link>
               <Link to="/signup" className="rounded-full bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90">Sign up</Link>
             </>}

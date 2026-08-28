@@ -1,0 +1,43 @@
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=DM+Sans:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  font-family: "DM Sans", sans-serif;
+  overflow-x: clip;
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+}
+
+@layer base {
+  :root {
+    --background: 60 33% 98%;
+    --foreground: 140 30% 12%;
+    --card: 0 0% 100%;
+    --card-foreground: 140 30% 12%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 140 30% 12%;
+    --primary: 142 55% 28%;
+    --primary-foreground: 60 33% 98%;
+    --secondary: 90 40% 92%;
+    --secondary-foreground: 142 55% 20%;
+    --muted: 90 20% 94%;
+    --muted-foreground: 140 12% 40%;
+    --accent: 32 85% 52%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 72% 45%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 120 15% 88%;
+    --input: 120 15% 88%;
+    --ring: 142 55% 28%;
+    --radius: 0.75rem;
+  }
+}
+
+@layer utilities {
+  .font-display {
+    font-family: "Fraunces", serif;
+  }
+}

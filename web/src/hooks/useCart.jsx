@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
-import { formatCurrency } from '@/api/EcommerceApi';
+import { formatCurrency } from '@/api/StoreApi';
 
 const CartContext = createContext();
 

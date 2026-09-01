@@ -20,7 +20,18 @@ routerAdd("GET", "/{$}", (e) => {
             ? String.fromCharCode.apply(null, response.body)
             : response.body
 
-        return e.html(response.statusCode, htmlContent)
+        // The PocketBase dashboard is a separate, prebuilt application. Keep its
+        // layout intact while making the interface easier to scan and use by
+        // lifting the base rem size slightly. The controls inherit this size so
+        // tables, labels, dialogs, and forms stay visually consistent.
+        const dashboardTypography = `<style id="netia-dashboard-typography">
+            html { font-size: 17px; }
+            body, button, input, select, textarea { font-size: 1rem; }
+            input, select, textarea { min-height: 2.6rem; }
+        </style>`
+        const enhancedHtml = htmlContent.replace('</head>', `${dashboardTypography}</head>`)
+
+        return e.html(response.statusCode, enhancedHtml)
     } catch (err) {
         throw new NotFoundError("Failed to load dashboard", err)
     }

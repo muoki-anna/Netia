@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { initializeCheckout } from '@/api/EcommerceApi';
+import { createOrder } from '@/api/StoreApi';
+import MpesaPaymentDialog from '@/components/MpesaPaymentDialog';
 import { useSubscriptionAuth } from '@/contexts/SubscriptionAuthContext.jsx';
 import { LOGIN_PATH, MANAGE_PATH } from '@/config/subscriptionRoutes.js';
 
@@ -18,6 +19,8 @@ import { LOGIN_PATH, MANAGE_PATH } from '@/config/subscriptionRoutes.js';
 export default function SubscribeButton({ plan, variant, className, label }) {
 	const [loading, setLoading] = useState(false);
 	const [errorMessage, setErrorMessage] = useState(null);
+	const [paymentOpen, setPaymentOpen] = useState(false);
+	const [pendingOrder, setPendingOrder] = useState(null);
 	const { currentUser, isAuthenticated, refreshSubscriptions } = useSubscriptionAuth();
 	const navigate = useNavigate();
 
@@ -29,40 +32,26 @@ export default function SubscribeButton({ plan, variant, className, label }) {
 		setErrorMessage(null);
 		setLoading(true);
 		try {
-			const { url } = await initializeCheckout({
+			// Subscription plans are billed through our own M-Pesa flow now:
+			// create a pending order for the plan, then collect payment on-site.
+			const order = await createOrder({
 				items: [{ variant_id: variant.id, quantity: 1 }],
-				successUrl: window.location.origin + MANAGE_PATH + '?just_subscribed=1',
-				cancelUrl: window.location.origin + MANAGE_PATH + '?just_subscribed=1',
-				customer: {
-					external_id: currentUser.id,
-					email: currentUser.email,
-				},
+				customer: { external_id: currentUser.id, email: currentUser.email, name: currentUser.name },
 			});
-			// sessionStorage survives the same-tab redirect through Ecommerce API checkout
-			// and lets PlansList / SubscriptionAccountSection poll for the new
-			// subscription on return even when Ecommerce API ignores `successUrl` and
-			// drops the `?just_subscribed=1` flag.
-			sessionStorage.setItem('subscriptionPending', String(Date.now()));
-			window.location = url;
+			setPendingOrder(order);
+			setPaymentOpen(true);
 		} catch (err) {
 			console.error('Checkout failed', err);
+			setErrorMessage("Couldn't start checkout. Please try again.");
+		} finally {
 			setLoading(false);
-			// Defense in depth for the stale-tab race: if checkout failed because
-			// the user already has an active subscription (Ecommerce API
-			// `customer_subscription_exists`), refreshing subscriptions surfaces
-			// the existing one — the locked-card UI re-renders and we route them
-			// to the Manage page. Any other failure leaves them on /plans with
-			// an inline error message.
-			const freshSubscriptions = await refreshSubscriptions();
-			const hasActive = freshSubscriptions.some(
-				(subscription) => subscription && (subscription.status === 'active' || subscription.status === 'trialing'),
-			);
-			if (hasActive) {
-				navigate(MANAGE_PATH);
-			} else {
-				setErrorMessage("Couldn't start checkout. Please try again.");
-			}
 		}
+	};
+
+	const handlePaymentSuccess = () => {
+		setPaymentOpen(false);
+		setPendingOrder(null);
+		navigate(MANAGE_PATH + '?just_subscribed=1');
 	};
 
 	return (
@@ -73,11 +62,23 @@ export default function SubscribeButton({ plan, variant, className, label }) {
 				disabled={loading}
 				className={className ?? 'w-full rounded-md bg-primary text-primary-foreground px-4 py-2 font-medium hover:bg-primary/90 disabled:opacity-60'}
 			>
-				{loading ? 'Redirecting…' : (label ?? `Subscribe to ${plan?.title ?? 'plan'}`)}
+				{loading ? 'Starting…' : (label ?? `Subscribe to ${plan?.title ?? 'plan'}`)}
 			</button>
 			{errorMessage && (
 				<p className="text-sm text-destructive mt-2" role="alert">{errorMessage}</p>
 			)}
+			<MpesaPaymentDialog
+				open={paymentOpen}
+				onOpenChange={setPaymentOpen}
+				amount={Math.round(((variant?.sale_price_in_cents ?? variant?.price_in_cents) || 0) / 100)}
+				orderType="subscription"
+				items={[{ title: plan?.title, variant: variant?.title, quantity: 1 }]}
+				email={currentUser?.email || ''}
+				name={currentUser?.name || ''}
+				userId={currentUser?.id || null}
+				storeOrderId={pendingOrder?.id || null}
+				onSuccess={handlePaymentSuccess}
+			/>
 		</div>
 	);
 }

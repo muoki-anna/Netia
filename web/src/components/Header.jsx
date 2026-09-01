@@ -46,7 +46,7 @@ const Header = ({ onCartOpen }) => {
     <header className="sticky top-0 z-40 border-b border-border bg-background/85 backdrop-blur">
       <div className="mx-auto flex h-16 max-w-[80rem] items-center justify-between gap-3 px-4 sm:px-6">
         <Link to="/" className="flex shrink-0 items-center">
-          <img src="https://images.hostinger.com/bb255e78-128b-47e5-bd96-fa47fe96fc3e.png" alt="NetiaX Agrotech Solutions" className="h-12 w-auto" />
+          <img src="/assets/img/logo.png" alt="NetiaX Agrotech Solutions" className="h-12 w-auto" />
         </Link>
 
         <nav className="hidden items-center gap-1 lg:flex" aria-label="Main navigation">

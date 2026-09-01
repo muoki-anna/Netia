@@ -6,8 +6,8 @@ import { Sprout, Leaf, Warehouse, Droplets, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import ProductsList from '@/components/ProductsList';
 
-const HERO = 'https://images.hostinger.com/6f503c8b-1dc3-4fb8-9708-efcbf8d12d99.png';
-const MEDIA = 'https://images.hostinger.com/a29b28b7-d2fd-49f9-b6f5-21c648e95b2e.png';
+const HERO = '/assets/img/hero.png';
+const MEDIA = '/assets/img/media.png';
 
 const categories = [
   { icon: Leaf, title: 'Vegetable Seedlings', desc: 'Healthy, disease-free hybrid seedlings raised for high yields.' },

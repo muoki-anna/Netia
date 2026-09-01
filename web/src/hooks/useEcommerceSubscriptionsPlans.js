@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
-import { getProducts } from '@/api/EcommerceApi';
+import { getProducts } from '@/api/StoreApi';
 
-/** @import { ProductListResponse } from '@/api/EcommerceApi' */
+/** @import { ProductListResponse } from '@/api/StoreApi' */
 
 /**
  * Fetches subscription products via {@link getProducts} (`type: 'subscription'`).

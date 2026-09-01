@@ -34,6 +34,7 @@ export default function MpesaPaymentDialog({
   email = '',
   name = '',
   userId = null,
+  storeOrderId = null,
   onSuccess,
 }) {
   const [phone, setPhone] = useState('');
@@ -114,6 +115,7 @@ export default function MpesaPaymentDialog({
           email,
           name,
           userId,
+          storeOrderId,
         }),
       });
 
@@ -129,7 +131,7 @@ export default function MpesaPaymentDialog({
       setStage('error');
       setErrorMessage(err.message || 'Could not start M-Pesa payment.');
     }
-  }, [phone, amount, orderType, items, email, name, userId, pollStatus]);
+  }, [phone, amount, orderType, items, email, name, userId, storeOrderId, pollStatus]);
 
   return (
     <Dialog open={open} onOpenChange={(next) => (!next ? resetAndClose() : onOpenChange(next))}>

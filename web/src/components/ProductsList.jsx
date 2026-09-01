@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { ShoppingCart, Loader2 } from 'lucide-react';
 import { useCart } from '@/hooks/useCart';
 import { useToast } from '@/hooks/use-toast';
-import { getProducts, getProductQuantities } from '@/api/EcommerceApi';
+import { getProducts, getProductQuantities } from '@/api/StoreApi';
 
 export const STORE_CATEGORIES = [
   { id: 'all', label: 'All Products' },

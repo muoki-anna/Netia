@@ -20,8 +20,8 @@ export const projects = [
       { label: 'Button dripper lay-out (7 acres)', done: false },
       { label: 'Pressure testing & handover', done: false },
     ],
-    heroImage: 'https://images.hostinger.com/e2d6206c-3270-4a64-8387-a4a8ccf091c8.png',
-    detailImage: 'https://images.hostinger.com/2004f3e3-9c5f-48b5-94d2-c65d318f8cda.png',
+    heroImage: '/assets/projects/hero-1.png',
+    detailImage: '/assets/projects/detail-1.png',
   },
   {
     id: 'juja-metallic-greenhouse-2026',
@@ -42,47 +42,47 @@ export const projects = [
       { label: 'Drip irrigation piping & installation', done: true },
       { label: 'Handover & crop planting', done: true },
     ],
-    heroImage: 'https://horizons-cdn.hostinger.com/d6383917-0ac1-4dde-a53c-5825339d6b6d/6dfd45fdf2de84e12f16389ae1bf61da.jpg',
-    detailImage: 'https://horizons-cdn.hostinger.com/d6383917-0ac1-4dde-a53c-5825339d6b6d/a3474fd04b21be8545827ea2967db822.jpg',
+    heroImage: '/assets/projects/6dfd45fdf2de84e12f16389ae1bf61da.jpg',
+    detailImage: '/assets/projects/a3474fd04b21be8545827ea2967db822.jpg',
     gallery: [
       {
-        src: 'https://horizons-cdn.hostinger.com/d6383917-0ac1-4dde-a53c-5825339d6b6d/bfa38656a3963917f1f7d3eb7756de7b.jpg',
+        src: '/assets/projects/bfa38656a3963917f1f7d3eb7756de7b.jpg',
         caption: 'Greenhouse frame posts marked out and set on the cleared Juja site',
       },
       {
-        src: 'https://horizons-cdn.hostinger.com/d6383917-0ac1-4dde-a53c-5825339d6b6d/3c21a398bc5c109cfffde5fa23037575.jpg',
+        src: '/assets/projects/3c21a398bc5c109cfffde5fa23037575.jpg',
         caption: 'Vertical frame posts being erected ahead of the arched roof structure',
       },
       {
-        src: 'https://horizons-cdn.hostinger.com/d6383917-0ac1-4dde-a53c-5825339d6b6d/a3474fd04b21be8545827ea2967db822.jpg',
+        src: '/assets/projects/a3474fd04b21be8545827ea2967db822.jpg',
         caption: 'Metallic arched roof trusses taking shape across the greenhouse span',
       },
       {
-        src: 'https://horizons-cdn.hostinger.com/d6383917-0ac1-4dde-a53c-5825339d6b6d/7f919bd4b5ef371a4e391adfa531530e.jpg',
+        src: '/assets/projects/7f919bd4b5ef371a4e391adfa531530e.jpg',
         caption: 'Frame pipework staged on site ahead of assembly',
       },
       {
-        src: 'https://horizons-cdn.hostinger.com/d6383917-0ac1-4dde-a53c-5825339d6b6d/6dfd45fdf2de84e12f16389ae1bf61da.jpg',
+        src: '/assets/projects/6dfd45fdf2de84e12f16389ae1bf61da.jpg',
         caption: 'Completed greenhouse tunnel with crops growing inside',
       },
       {
-        src: 'https://horizons-cdn.hostinger.com/d6383917-0ac1-4dde-a53c-5825339d6b6d/ffb649c37f3dba15caace13933f5f1d1.jpg',
+        src: '/assets/projects/ffb649c37f3dba15caace13933f5f1d1.jpg',
         caption: 'HDPE mainline piping delivered for the drip irrigation network',
       },
       {
-        src: 'https://horizons-cdn.hostinger.com/d6383917-0ac1-4dde-a53c-5825339d6b6d/d51f4eccd8ce3631c9dd277965c2faf6.jpg',
+        src: '/assets/projects/d51f4eccd8ce3631c9dd277965c2faf6.jpg',
         caption: 'Drip line valve and sub-main fittings installed along the planting rows',
       },
       {
-        src: 'https://horizons-cdn.hostinger.com/d6383917-0ac1-4dde-a53c-5825339d6b6d/9a8ad19de9d0fe35089df0c337aecd4b.jpg',
+        src: '/assets/projects/9a8ad19de9d0fe35089df0c337aecd4b.jpg',
         caption: 'Drip laterals laid along trenches with dripper take-offs at each plant point',
       },
       {
-        src: 'https://horizons-cdn.hostinger.com/d6383917-0ac1-4dde-a53c-5825339d6b6d/dd4204d84eaa1aa7647a3d93fe2a3b55.jpg',
+        src: '/assets/projects/dd4204d84eaa1aa7647a3d93fe2a3b55.jpg',
         caption: 'Irrigation control fittings connecting the mainline to sub-main laterals',
       },
       {
-        src: 'https://horizons-cdn.hostinger.com/d6383917-0ac1-4dde-a53c-5825339d6b6d/4b79847d8b429474098b78591037b7f0.jpg',
+        src: '/assets/projects/4b79847d8b429474098b78591037b7f0.jpg',
         caption: 'Drip-irrigated rows with healthy crop growth after installation',
       },
     ],

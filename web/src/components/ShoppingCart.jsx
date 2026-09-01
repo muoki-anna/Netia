@@ -4,7 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { ShoppingCart as ShoppingCartIcon, X, Smartphone } from 'lucide-react';
 import { useCart } from '@/hooks/useCart';
 import { Button } from '@/components/ui/button';
-import { initializeCheckout } from '@/api/EcommerceApi';
+import { createOrder, getProductQuantities } from '@/api/StoreApi';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import MpesaPaymentDialog from '@/components/MpesaPaymentDialog';
@@ -15,6 +15,7 @@ const ShoppingCart = ({ isCartOpen, setIsCartOpen }) => {
   const { currentUser } = useAuth();
   const { cartItems, removeFromCart, updateQuantity, getCartTotal, clearCart } = useCart();
   const [isMpesaOpen, setIsMpesaOpen] = useState(false);
+  const [pendingOrder, setPendingOrder] = useState(null);
 
   const hasSubscriptionInCart = useMemo(
     () => cartItems.some(item => item.product?.type?.value === 'subscription'),
@@ -56,6 +57,7 @@ const ShoppingCart = ({ isCartOpen, setIsCartOpen }) => {
 
   const handleMpesaSuccess = useCallback(() => {
     clearCart();
+    setPendingOrder(null);
     setIsCartOpen(false);
     navigate('/success');
   }, [clearCart, navigate, setIsCartOpen]);
@@ -101,40 +103,70 @@ const ShoppingCart = ({ isCartOpen, setIsCartOpen }) => {
       return;
     }
 
+    // Reconcile the persisted cart against the live catalogue so stale variant
+    // ids (after a catalogue update) are dropped automatically instead of
+    // failing the whole checkout with an "out of date" error.
+    let validItems = items;
     try {
-      const successUrl = `${window.location.origin}/success`;
-      const cancelUrl = window.location.href;
+      const productIds = [...new Set(
+        cartItems.filter(item => item?.product?.id).map(item => item.product.id)
+      )];
 
+      if (productIds.length > 0) {
+        const quantities = await getProductQuantities({
+          fields: 'inventory_quantity',
+          product_ids: productIds,
+        });
+        const validVariantIds = new Set((quantities?.variants || []).map(v => v.id));
+        const staleItems = items.filter(i => !validVariantIds.has(i.variant_id));
+
+        if (staleItems.length > 0) {
+          staleItems.forEach(i => removeFromCart(i.variant_id));
+          validItems = items.filter(i => validVariantIds.has(i.variant_id));
+
+          if (validItems.length === 0) {
+            toast({
+              title: 'Your cart has been updated',
+              description: 'The products in your cart are no longer available. Please add them again from the store.',
+              variant: 'destructive',
+            });
+            return;
+          }
+
+          toast({
+            title: 'Cart updated',
+            description: 'Some outdated items were removed from your cart. Continuing checkout with the remaining items.',
+          });
+        }
+      }
+    } catch (validationError) {
+      // If validation itself fails (e.g. network hiccup), continue with the
+      // cart as-is rather than blocking checkout.
+      console.warn('Cart validation skipped:', validationError);
+    }
+
+    // Check out entirely locally: create a pending order in our own
+    // database, then open the M-Pesa payment dialog. No Hostinger checkout.
+    let storeOrder = null;
+    try {
       const customer = currentUser
-        ? { external_id: currentUser.id, email: currentUser.email }
+        ? { external_id: currentUser.id, email: currentUser.email, name: currentUser.name }
         : undefined;
 
-      const result = await initializeCheckout({ items, successUrl, cancelUrl, customer });
-      const url = result?.url;
-
-      if (!url) {
-        throw new Error('No checkout URL returned');
-      }
-
-      clearCart();
-      window.location.href = url;
+      storeOrder = await createOrder({ items: validItems, customer });
     } catch (error) {
-      const raw = (error && error.message) || '';
-      // A stale cart (variant IDs changed after a catalogue update) is the most
-      // common cause — surface an actionable message instead of a generic one.
-      const isStaleCart = /variant|400|not exist/i.test(raw);
-      const description = isStaleCart
-        ? 'Some items in your cart are out of date. Please remove them and add the products again, then retry checkout.'
-        : raw || 'There was a problem initializing checkout. Please try again.';
-
       console.error('Checkout failed:', error);
       toast({
         title: 'Checkout Error',
-        description,
+        description: (error && error.message) || 'There was a problem creating your order. Please try again.',
         variant: 'destructive',
       });
+      return;
     }
-  }, [cartItems, clearCart, toast, currentUser, navigate, setIsCartOpen]);
+
+    setPendingOrder(storeOrder);
+    setIsMpesaOpen(true);
+  }, [cartItems, clearCart, removeFromCart, toast, currentUser, navigate, setIsCartOpen]);
 
   return (
     <AnimatePresence>
@@ -240,6 +272,7 @@ const ShoppingCart = ({ isCartOpen, setIsCartOpen }) => {
         email={currentUser?.email || ''}
         name={currentUser?.name || ''}
         userId={currentUser?.id || null}
+        storeOrderId={pendingOrder?.id || null}
         onSuccess={handleMpesaSuccess}
       />
     </AnimatePresence>

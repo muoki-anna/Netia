@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Helmet } from 'react-helmet';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { getProduct, getProductQuantities } from '@/api/EcommerceApi';
+import { getProduct, getProductQuantities } from '@/api/StoreApi';
 import { Button } from '@/components/ui/button';
 import { useCart } from '@/hooks/useCart';
 import { useToast } from '@/hooks/use-toast';

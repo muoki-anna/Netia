@@ -1,6 +1,6 @@
 export const CATEGORIES = ['Spray Programs', 'Planting Techniques', 'Best Practices'];
 
-export const BLOG_HERO = 'https://images.hostinger.com/ed6d4a1a-7f88-44ff-8ecc-bc9af7344bf0.png';
+export const BLOG_HERO = '/assets/blog/hero.png';
 
 export const posts = [
   {
@@ -10,7 +10,7 @@ export const posts = [
     author: 'NetiaX Agronomy Team',
     date: '2026-06-02',
     readTime: '7 min read',
-    image: 'https://images.hostinger.com/8a8c6785-9e54-4615-93bc-a0f11186bb08.png',
+    image: '/assets/blog/8a8c6785.png',
     excerpt: 'A season-long spray calendar that protects tomatoes, kale and peppers from blight, aphids and bollworm without wrecking your soil biology.',
     content: [
       'A reliable spray program is the single biggest lever a kitchen garden farmer has over crop loss. Most losses we see in Juja and the wider Kiambu belt come not from one catastrophic outbreak, but from small, preventable infections that are caught too late.',
@@ -29,7 +29,7 @@ export const posts = [
     author: 'NetiaX Agronomy Team',
     date: '2026-06-14',
     readTime: '6 min read',
-    image: 'https://images.hostinger.com/bac30dc0-6d12-4791-9cde-014133123ed5.png',
+    image: '/assets/blog/bac30dc0.png',
     excerpt: 'Chemical sprays are a last resort, not a first response. Here is how to build a garden that manages most of its own pest pressure.',
     content: [
       'Integrated Pest Management (IPM) is a layered defence: cultural practice first, biological control second, and targeted chemical spraying only when a pest crosses an economic threshold.',
@@ -48,7 +48,7 @@ export const posts = [
     author: 'NetiaX Agronomy Team',
     date: '2026-06-20',
     readTime: '8 min read',
-    image: 'https://images.hostinger.com/860b6ef4-72c8-4bbf-bb45-06405212c1cc.png',
+    image: '/assets/blog/860b6ef4.png',
     excerpt: 'Spacing, depth and support decisions made at transplanting determine most of your yield ceiling for the season.',
     content: [
       'Tomatoes should be transplanted deep — burying two-thirds of the stem encourages adventitious roots along the buried section, producing a stronger root system than a shallow transplant. Space indeterminate varieties 60cm apart in rows 90cm apart to allow staking and airflow.',
@@ -67,7 +67,7 @@ export const posts = [
     author: 'NetiaX Agronomy Team',
     date: '2026-06-28',
     readTime: '7 min read',
-    image: 'https://images.hostinger.com/b367543a-6cc0-40c9-8992-9ddcb2ec46e6.png',
+    image: '/assets/blog/b367543a.png',
     excerpt: 'Most kitchen garden yield problems trace back to the bed, not the seed. Build soil that feeds itself.',
     content: [
       'Test before you amend. A basic soil test tells you pH and rough nutrient status — most Central Kenya red soils sit around pH 5.0-5.8, which is too acidic for optimal nutrient uptake in tomato, pepper and brassica crops. Target pH 6.0-6.8.',
@@ -86,7 +86,7 @@ export const posts = [
     author: 'NetiaX Agronomy Team',
     date: '2026-07-05',
     readTime: '6 min read',
-    image: 'https://images.hostinger.com/39b5d7d0-ee9d-412c-a506-fd020fb0e84c.png',
+    image: '/assets/blog/39b5d7d0.png',
     excerpt: 'The first three weeks of a seedling\'s life decide how well it survives transplant shock. Here is how we raise ours.',
     content: [
       'Germinate in a light, well-draining medium like Netia Grow propagation media — heavy garden soil compacts in trays and suffocates emerging radicles before they can establish.',
@@ -105,7 +105,7 @@ export const posts = [
     author: 'NetiaX Agronomy Team',
     date: '2026-07-12',
     readTime: '7 min read',
-    image: 'https://images.hostinger.com/5208e38d-d0d4-4243-b57f-4d66901cf19f.png',
+    image: '/assets/blog/5208e38d.png',
     excerpt: 'Overwatering kills more kitchen gardens than drought does. Get the schedule and the system right.',
     content: [
       'Drip irrigation delivers water directly to the root zone at low pressure, cutting water use by up to 60% compared to overhead sprinklers while also keeping foliage dry — dry leaves mean dramatically lower fungal disease pressure.',

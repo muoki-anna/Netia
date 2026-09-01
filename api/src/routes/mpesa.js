@@ -1,13 +1,13 @@
 import { Router } from 'express';
 import logger from '../utils/logger.js';
 import pocketbaseClient from '../utils/pocketbaseClient.js';
-import { initiateStkPush, normalizeKenyanPhone } from '../utils/mpesa.js';
+import { initiateStkPush, normalizeKenyanPhone, queryStkStatus } from '../utils/mpesa.js';
 
 const router = Router();
 
 // POST /mpesa/stkpush — start an M-Pesa till STK push for a cart/subscription checkout.
 router.post('/stkpush', async (req, res) => {
-	const { phone, amount, orderType, items, email, name, userId } = req.body ?? {};
+	const { phone, amount, orderType, items, email, name, userId, storeOrderId } = req.body ?? {};
 
 	if (!phone || !amount || !orderType) {
 		return res.status(422).json({ error: 'phone, amount and orderType are required' });
@@ -42,6 +42,7 @@ router.post('/stkpush', async (req, res) => {
 	});
 
 	const order = await pocketbaseClient.collection('mpesa_orders').create({
+		store_order: storeOrderId || null,
 		checkout_request_id: stkResponse.CheckoutRequestID,
 		merchant_request_id: stkResponse.MerchantRequestID,
 		phone: normalizedPhone,
@@ -65,6 +66,9 @@ router.post('/stkpush', async (req, res) => {
 });
 
 // GET /mpesa/status/:checkoutRequestId — the frontend polls this after triggering the STK push prompt.
+// If the order is still pending, actively query Daraja as a fallback — this
+// keeps the flow working even when the public callback URL can't reach us
+// (e.g. local development behind NAT).
 router.get('/status/:checkoutRequestId', async (req, res) => {
 	const { checkoutRequestId } = req.params;
 
@@ -77,11 +81,58 @@ router.get('/status/:checkoutRequestId', async (req, res) => {
 		return res.status(404).json({ error: 'Order not found' });
 	}
 
+	let status = order.status;
+	let mpesaReceipt = order.mpesa_receipt || null;
+	let resultDesc = order.result_desc || null;
+
+	if (status === 'pending') {
+		try {
+			const query = await queryStkStatus(checkoutRequestId);
+			const resultCode = String(query.ResultCode ?? query.resultCode ?? '');
+
+			if (resultCode === '0') {
+				status = 'paid';
+				mpesaReceipt = query.MpesaReceiptNumber || mpesaReceipt;
+				resultDesc = query.ResultDesc || resultDesc;
+			} else if (resultCode === '1032') {
+				status = 'cancelled';
+				resultDesc = query.ResultDesc || resultDesc;
+			} else if (resultCode === '1037' || resultCode === '1') {
+				status = 'failed';
+				resultDesc = query.ResultDesc || resultDesc;
+			}
+			// Daraja returns 500.001.1001 when the request is still in flight —
+			// leave the status as pending in that case.
+
+			if (status !== 'pending') {
+				await pocketbaseClient.collection('mpesa_orders').update(order.id, {
+					status,
+					...(mpesaReceipt ? { mpesa_receipt: mpesaReceipt } : {}),
+					result_desc: resultDesc,
+				});
+				if (order.store_order) {
+					try {
+						await pocketbaseClient.collection('store_orders').update(order.store_order, {
+							status,
+							...(mpesaReceipt ? { mpesa_receipt: mpesaReceipt } : {}),
+						});
+					} catch (err) {
+						logger.error(`Failed to sync store_order ${order.store_order}:`, err?.message ?? err);
+					}
+				}
+			}
+		} catch (err) {
+			// Query failures (bad credentials, Daraja downtime) must not break
+			// polling — the callback may still land and update the order later.
+			logger.warn(`mpesa status query fallback failed: ${err?.message ?? err}`);
+		}
+	}
+
 	res.json({
-		status: order.status,
+		status,
 		amount: order.amount,
-		mpesaReceipt: order.mpesa_receipt || null,
-		resultDesc: order.result_desc || null,
+		mpesaReceipt,
+		resultDesc,
 	});
 });
 
@@ -106,20 +157,36 @@ router.post('/callback', async (req, res) => {
 		return res.json({ ResultCode: 0, ResultDesc: 'Accepted' });
 	}
 
+	// Propagate the payment outcome to the linked store order (if any).
+	const syncStoreOrder = async (status, receipt) => {
+		if (!order.store_order) return;
+		try {
+			await pocketbaseClient.collection('store_orders').update(order.store_order, {
+				status,
+				...(receipt ? { mpesa_receipt: receipt, checkout_request_id: CheckoutRequestID } : {}),
+			});
+		} catch (err) {
+			logger.error(`Failed to sync store_order ${order.store_order}:`, err?.message ?? err);
+		}
+	};
+
 	if (Number(ResultCode) === 0) {
 		const items = CallbackMetadata?.Item || [];
 		const findValue = (name) => items.find((i) => i.Name === name)?.Value;
+		const receipt = findValue('MpesaReceiptNumber') || '';
 
 		await pocketbaseClient.collection('mpesa_orders').update(order.id, {
 			status: 'paid',
-			mpesa_receipt: findValue('MpesaReceiptNumber') || '',
+			mpesa_receipt: receipt,
 			result_desc: ResultDesc,
 		});
+		await syncStoreOrder('paid', receipt);
 	} else {
 		await pocketbaseClient.collection('mpesa_orders').update(order.id, {
 			status: Number(ResultCode) === 1032 ? 'cancelled' : 'failed',
 			result_desc: ResultDesc,
 		});
+		await syncStoreOrder(Number(ResultCode) === 1032 ? 'cancelled' : 'failed', null);
 	}
 
 	// Safaricom expects a 200 with this exact shape regardless of outcome.

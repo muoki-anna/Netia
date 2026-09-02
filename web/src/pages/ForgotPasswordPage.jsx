@@ -17,7 +17,7 @@ const ForgotPasswordPage = () => {
 
     try {
       await requestPasswordReset(email);
-      setMessage('If an account with that email exists, we have sent a password reset link.');
+      setMessage('Password reset link sent! Please check your inbox (and spam folder).');
     } catch (err) {
       setError(err?.response?.message || 'Failed to send password reset email.');
     } finally {

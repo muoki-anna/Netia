@@ -284,8 +284,12 @@ function ProductDetailPage() {
             </div>
 
             <div className="mt-auto">
-              <Button onClick={handleAddToCart} size="lg" className="w-full bg-gradient-to-r from-primary to-primary hover:from-purple-600 hover:to-pink-600 text-foreground font-semibold py-3 text-lg disabled:opacity-50 disabled:cursor-not-allowed" disabled={!canAddToCart || !product.purchasable}>
+              <Button onClick={handleAddToCart} size="lg" className="w-full bg-gradient-to-r from-primary to-primary hover:from-purple-600 hover:to-pink-600 text-foreground font-semibold py-3 text-lg disabled:opacity-50 disabled:cursor-not-allowed mb-3" disabled={!canAddToCart || !product.purchasable}>
                 <ShoppingCart className="mr-2 h-5 w-5" /> Add to Cart
+              </Button>
+
+              <Button onClick={() => window.dispatchEvent(new CustomEvent('open-cart'))} size="lg" variant="outline" className="w-full border-primary text-primary hover:bg-primary/10 font-semibold py-3 text-lg">
+                Proceed to Checkout
               </Button>
 
               {isStockManaged && canAddToCart && product.purchasable && (

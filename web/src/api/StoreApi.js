@@ -259,7 +259,7 @@ export async function createOrder({ items, customer, currency = "KES" }) {
       throw new Error(`A product in your cart is no longer available`);
     }
 
-    const unitPrice = variant.sale_price_in_cents ?? variant.price_in_cents;
+    const unitPrice = variant.sale_price_in_cents || variant.price_in_cents || 0;
     const quantity = Math.max(1, Number(item.quantity) || 1);
 
     if (variant.manage_inventory && variant.inventory_quantity != null && quantity > variant.inventory_quantity) {

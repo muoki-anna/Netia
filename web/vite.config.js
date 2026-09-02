@@ -380,6 +380,13 @@ export default defineConfig({
 	],
 	server: {
 		port: 3000,
+		proxy: {
+			'/hcgi/api': {
+				target: 'http://127.0.0.1:3001',
+				changeOrigin: true,
+				rewrite: (path) => path.replace(/^\/hcgi\/api/, ''),
+			},
+		},
 		cors: { origin: AllowedEditorOrigins },
 		headers: {
 			'Cross-Origin-Embedder-Policy': 'credentialless',

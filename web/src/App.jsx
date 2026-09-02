@@ -32,6 +32,12 @@ import BlogPostPage from './pages/BlogPostPage';
 function App() {
   const [isCartOpen, setIsCartOpen] = useState(false);
 
+  React.useEffect(() => {
+    const handleOpenCart = () => setIsCartOpen(true);
+    window.addEventListener('open-cart', handleOpenCart);
+    return () => window.removeEventListener('open-cart', handleOpenCart);
+  }, []);
+
   return (
     <CartProvider>
       <AuthProvider>

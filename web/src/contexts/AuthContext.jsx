@@ -33,12 +33,22 @@ export function AuthProvider({ children }) {
     pb.authStore.clear();
   };
 
+  const requestPasswordReset = async (email) => {
+    await pb.collection('users').requestPasswordReset(email);
+  };
+
+  const confirmPasswordReset = async (token, password, passwordConfirm) => {
+    await pb.collection('users').confirmPasswordReset(token, password, passwordConfirm);
+  };
+
   const value = {
     currentUser,
     isAuthenticated: Boolean(currentUser),
     login,
     signup,
     logout,
+    requestPasswordReset,
+    confirmPasswordReset,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

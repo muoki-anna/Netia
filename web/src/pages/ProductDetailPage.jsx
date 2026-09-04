@@ -73,6 +73,22 @@ function ProductDetailPage() {
     }
   }, [product?.images]);
 
+  const handleBuyNow = useCallback(async () => {
+    if (product && selectedVariant) {
+      const availableQuantity = selectedVariant.inventory_quantity;
+      try {
+        await addToCart(product, selectedVariant, quantity, availableQuantity);
+        window.dispatchEvent(new CustomEvent('open-cart'));
+      } catch (error) {
+        toast({
+          variant: "destructive",
+          title: "Oh no! Something went wrong.",
+          description: error.message,
+        });
+      }
+    }
+  }, [product, selectedVariant, quantity, addToCart, toast]);
+
   useEffect(() => {
     const fetchProductData = async () => {
       try {
@@ -288,7 +304,7 @@ function ProductDetailPage() {
                 <ShoppingCart className="mr-2 h-5 w-5" /> Add to Cart
               </Button>
 
-              <Button onClick={() => window.dispatchEvent(new CustomEvent('open-cart'))} size="lg" variant="outline" className="w-full border-primary text-primary hover:bg-primary/10 font-semibold py-3 text-lg">
+              <Button onClick={handleBuyNow} size="lg" variant="outline" className="w-full border-primary text-primary hover:bg-primary/10 font-semibold py-3 text-lg" disabled={!canAddToCart || !product.purchasable}>
                 Proceed to Checkout
               </Button>
 

@@ -5,6 +5,8 @@ import { CartProvider } from '@/hooks/useCart';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { SubscriptionAuthProvider } from '@/contexts/SubscriptionAuthContext.jsx';
 import ProtectedRoute from '@/components/ProtectedRoute';
+import AdminRoute from '@/components/admin/AdminRoute';
+import AdminLayout from '@/components/admin/AdminLayout';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import ShoppingCart from '@/components/ShoppingCart';
@@ -80,6 +82,15 @@ function App() {
                       </ProtectedRoute>
                     }
                   />
+                  {/* Admin Routes */}
+                  <Route path="/admin" element={<AdminRoute />}>
+                    <Route element={<AdminLayout />}>
+                      <Route index element={<div className="p-8"><h1 className="text-3xl font-bold">Admin Dashboard Overview</h1></div>} />
+                      <Route path="products" element={<div className="p-8"><h1 className="text-3xl font-bold">Products</h1></div>} />
+                      <Route path="orders" element={<div className="p-8"><h1 className="text-3xl font-bold">Orders</h1></div>} />
+                      <Route path="blogs" element={<div className="p-8"><h1 className="text-3xl font-bold">Blogs</h1></div>} />
+                    </Route>
+                  </Route>
                 </Routes>
               </main>
               <Footer />

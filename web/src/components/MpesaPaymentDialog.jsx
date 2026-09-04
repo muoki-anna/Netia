@@ -13,7 +13,7 @@ import { Label } from '@/components/ui/label';
 import apiServerClient from '@/lib/apiServerClient';
 
 const POLL_INTERVAL_MS = 3000;
-const MAX_POLLS = 25; // ~75s
+const MAX_POLLS = 60; // ~180s
 
 /**
  * M-Pesa Till payment dialog.
@@ -63,12 +63,12 @@ export default function MpesaPaymentDialog({
       pollCountRef.current += 1;
 
       try {
-        const res = await apiServerClient.fetch(`/mpesa/status/${checkoutRequestId}`);
+        const res = await apiServerClient.fetch(`/mpesa/status/${checkoutRequestId}?t=${Date.now()}`, { cache: 'no-store' });
         if (res.ok) {
           const data = await res.json();
           if (data.status === 'paid') {
             clearInterval(pollRef.current);
-            setStage('success');
+            resetAndClose();
             onSuccess?.(data);
             return;
           }
@@ -121,7 +121,8 @@ export default function MpesaPaymentDialog({
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || data.message || 'Could not start M-Pesa payment.');
+        const errMessage = typeof data.error === 'object' ? data.error?.message : data.error;
+        throw new Error(errMessage || data.message || 'Could not start M-Pesa payment.');
       }
 
       const data = await res.json();

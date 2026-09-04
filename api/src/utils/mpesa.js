@@ -70,7 +70,7 @@ export async function initiateStkPush({ phone, amount, accountReference, transac
 		BusinessShortCode: till,
 		Password: password,
 		Timestamp: timestamp,
-		TransactionType: 'CustomerBuyGoodsOnline',
+		TransactionType: 'CustomerPayBillOnline',
 		Amount: Math.max(1, Math.round(amount)),
 		PartyA: phone,
 		PartyB: till,
@@ -128,6 +128,7 @@ export async function queryStkStatus(checkoutRequestId) {
 	const data = await response.json();
 
 	if (!response.ok) {
+        logger.error('mpesa stk query failed:', data);
 		throw new Error(`mpesa stk query failed: ${response.status} ${response.statusText}`);
 	}
 

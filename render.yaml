@@ -1,0 +1,36 @@
+services:
+  # 1. PocketBase Database Service
+  - type: web
+    name: netia-pocketbase
+    env: docker
+    rootDir: pocketbase
+    plan: free
+    disk:
+      name: pb_data
+      mountPath: /pb/pb_data
+      sizeGB: 1
+
+  # 2. Node.js API Service
+  - type: web
+    name: netia-api
+    env: node
+    rootDir: api
+    plan: free
+    buildCommand: npm install
+    startCommand: npm run start
+    envVars:
+      - key: POCKETBASE_URL
+        value: https://netia-pocketbase.onrender.com
+      - key: NODE_ENV
+        value: production
+
+  # 3. Frontend Web Service (Static Site)
+  - type: web
+    name: netia-web
+    env: static
+    rootDir: web
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./dist
+    envVars:
+      - key: VITE_API_URL
+        value: https://netia-api.onrender.com

@@ -122,6 +122,10 @@ async function getEcommerceUser({ userId }) {
  * @returns {Promise<EcommerceSubscription[]>}
  */
 export async function getUserSubscriptions({ userId }) {
+	if (!process.env.ECOMMERCE_API_URL || !process.env.ECOMMERCE_STORE_ID) {
+		return [];
+	}
+
 	const ecommerceUser = await getEcommerceUser({ userId });
 
 	return ecommerceUser?.subscriptions ?? [];
@@ -137,6 +141,10 @@ export async function getUserSubscriptions({ userId }) {
  * @returns {Promise<string>} The manage subscriptions URL.
  */
 export async function createManageUserSubscriptionUrl({ userId, returnUrl, subscriptionId }) {
+	if (!process.env.ECOMMERCE_API_URL || !process.env.ECOMMERCE_STORE_ID) {
+		throw new Error('E-commerce integration is not configured');
+	}
+
 	const normalizedUserId = requireNonEmptyTrimmedString(userId, 'User ID');
 	const normalizedReturnUrl = requireNonEmptyTrimmedString(returnUrl, 'Return URL');
 	const normalizedSubscriptionId = requireNonEmptyTrimmedString(subscriptionId, 'Subscription ID');

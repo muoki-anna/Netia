@@ -56,7 +56,7 @@ onModelCreate((e) => {
             // $os has no append primitive
             $os.cmd("sh", "-c", 'printf "%s" "$1" >> "$2"', "sh", entry, journalPath).run()
         } catch (err) {
-            console.error(`Failed to journal log: ${err}`)
+            // Ignore logging errors (like missing 'sh' on Windows)
         }
     }
 

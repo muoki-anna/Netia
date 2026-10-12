@@ -392,6 +392,8 @@ export default defineConfig({
 			'Cross-Origin-Embedder-Policy': 'credentialless',
 		},
 		allowedHosts: [
+			'netiaxke.com',
+			'.netiaxke.com',
 			'.app-preview.com',
 			'.app-preview.io',
 		],
@@ -406,6 +408,7 @@ export default defineConfig({
 	preview: {
 		port: 3033,
 		host: '0.0.0.0',
+		allowedHosts: true,
 		proxy: {
 			'/hcgi/api': {
 				target: 'http://127.0.0.1:3001',

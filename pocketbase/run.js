@@ -7,7 +7,10 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const isWin = process.platform === 'win32';
 const bin = path.join(__dirname, isWin ? 'pocketbase.exe' : 'pocketbase');
 
-const child = spawn(bin, process.argv.slice(2), { stdio: 'inherit' });
+const child = spawn(bin, process.argv.slice(2), {
+	cwd: __dirname,
+	stdio: 'inherit'
+});
 
 child.on('exit', (code, signal) => {
 	if (signal) {

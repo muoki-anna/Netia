@@ -74,6 +74,7 @@ jobs:
                 # Ensure PocketBase Linux binary is executable
                 if [ -f "pocketbase/pocketbase" ]; then
                     chmod +x pocketbase/pocketbase
+                    ln -sf "$APP_DIR/pocketbase/pocketbase" /usr/local/bin/pocketbase || true
                 fi
 
                 # Run or restart with PM2

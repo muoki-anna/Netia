@@ -403,6 +403,17 @@ export default defineConfig({
 			],
 		},
 	},
+	preview: {
+		port: 3033,
+		host: '0.0.0.0',
+		proxy: {
+			'/hcgi/api': {
+				target: 'http://127.0.0.1:3001',
+				changeOrigin: true,
+				rewrite: (path) => path.replace(/^\/hcgi\/api/, ''),
+			},
+		},
+	},
 	resolve: {
 		extensions: ['.jsx', '.js', '.json'],
 		alias: {

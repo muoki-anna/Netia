@@ -5,8 +5,8 @@
   "private": true,
   "scripts": {
     "dev": "vite --host :: --port 3033",
-    "build": "node tools/generate-llms.js || true && vite build --outDir ../../dist/apps/web",
-    "start": "vite preview --outDir ../../dist/apps/web --host :: --port 3033",
+    "build": "node tools/generate-llms.js || true && vite build",
+    "start": "vite preview --host :: --port 3033",
     "lint": "eslint . --quiet; lint_status=$?; eslint \"src/**/*.jsx\" --config eslint.config.mjs --format ./eslint.unicode-escapes-formatter.mjs --no-error-on-unmatched-pattern; exit $lint_status",
     "lint:warn": "eslint ."
   },

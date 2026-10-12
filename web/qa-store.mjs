@@ -4,7 +4,7 @@ export default async function run(page) {
     if (r.url().includes(':8090/api/collections/store_')) pbHits.push(r.url());
   });
 
-  await page.goto('http://localhost:3000/store');
+  await page.goto('http://localhost:3033/store');
   await page.waitForTimeout(3500);
 
   const text = await page.evaluate(() => document.body.innerText);

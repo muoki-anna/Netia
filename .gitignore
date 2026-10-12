@@ -17,6 +17,8 @@ node_modules/
 *.db-wal
 pb_snapshots/
 
+.vscode/
+
 # Build & temporary outputs
 dist/
 dist-ssr/

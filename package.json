@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "setup": "npm install",
-    "dev": "concurrently --kill-others --raw \"npm run dev --prefix web\" \"npm run dev --prefix api\" \"npm run dev --prefix pocketbase\"",
+    "dev": "concurrently --raw \"npm run dev --prefix web\" \"npm run dev --prefix api\" \"npm run dev --prefix pocketbase\"",
     "build": "concurrently --raw \"npm run build --prefix web\"",
     "start": "concurrently --kill-others --raw \"npm run start --prefix api\" \"npm run start --prefix pocketbase\"",
     "lint": "concurrently --raw \"npm run lint --prefix web\" \"npm run lint --prefix api\""

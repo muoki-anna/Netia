@@ -3,8 +3,9 @@ export default async function authMiddleware(req, res, next) {
   const header = req.headers.authorization;
   if (!header || !header.startsWith('Bearer ')) return reject();
   const token = header.slice('Bearer '.length).trim();
+  const pbHost = process.env.POCKETBASE_URL || 'https://pb.netiaxke.com';
   try {
-    const response = await fetch('http://localhost:8090/api/collections/users/auth-refresh', {
+    const response = await fetch(`${pbHost}/api/collections/users/auth-refresh`, {
       method: 'POST',
       headers: { Authorization: token },
     });

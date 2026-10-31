@@ -1,7 +1,7 @@
 import React, { useCallback, useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
-import { ShoppingCart as ShoppingCartIcon, X, Smartphone } from 'lucide-react';
+import { ShoppingCart as ShoppingCartIcon, X, Smartphone, Banknote } from 'lucide-react';
 import { useCart } from '@/hooks/useCart';
 import { Button } from '@/components/ui/button';
 import { createOrder, getProductQuantities } from '@/api/StoreApi';
@@ -61,6 +61,66 @@ const ShoppingCart = ({ isCartOpen, setIsCartOpen }) => {
     setIsCartOpen(false);
     navigate('/success');
   }, [clearCart, navigate, setIsCartOpen]);
+
+  const handleCashCheckout = useCallback(async () => {
+    if (cartItems.length === 0) {
+      toast({
+        title: 'Your cart is empty',
+        description: 'Add some products to your cart before checking out.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (hasSubscriptionInCart && !currentUser) {
+      toast({
+        title: 'Please sign in',
+        description: 'You need an account to purchase a subscription.',
+        variant: 'destructive',
+      });
+      setIsCartOpen(false);
+      navigate('/login');
+      return;
+    }
+
+    const items = cartItems
+      .filter(item => item?.variant?.id)
+      .map(item => ({
+        variant_id: item.variant.id,
+        quantity: Math.max(1, Number(item.quantity) || 1),
+      }));
+
+    if (items.length === 0) {
+      toast({
+        title: 'Checkout Error',
+        description: 'Your cart items are no longer valid. Please clear your cart and try again.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      const customer = currentUser
+        ? { external_id: currentUser.id, email: currentUser.email, name: currentUser.name }
+        : undefined;
+
+      const order = await createOrder({ items, customer, paymentMethod: 'cash' });
+      clearCart();
+      setIsCartOpen(false);
+      toast({
+        title: '✅ Order placed!',
+        description: 'Your order has been received. Pay cash on delivery.',
+      });
+      navigate(`/order-success/${order.id}`);
+    } catch (error) {
+      console.error('Cash checkout failed:', error);
+      toast({
+        title: 'Checkout Error',
+        description: (error && error.message) || 'There was a problem placing your order. Please try again.',
+        variant: 'destructive',
+      });
+    }
+  }, [cartItems, hasSubscriptionInCart, currentUser, clearCart, toast, navigate, setIsCartOpen]);
 
   const handleCheckout = useCallback(async () => {
     if (cartItems.length === 0) {
@@ -242,6 +302,19 @@ const ShoppingCart = ({ isCartOpen, setIsCartOpen }) => {
                 >
                   <Smartphone className="h-4 w-4" />
                   Pay with M-Pesa Till
+                </Button>
+                <div className="my-3 flex items-center gap-3">
+                  <div className="h-px flex-1 bg-border" />
+                  <span className="text-xs text-muted-foreground">or</span>
+                  <div className="h-px flex-1 bg-border" />
+                </div>
+                <Button
+                  onClick={handleCashCheckout}
+                  variant="outline"
+                  className="w-full border-green-600 text-green-700 hover:bg-green-50 font-semibold py-3 text-base flex items-center justify-center gap-2"
+                >
+                  <Banknote className="h-4 w-4" />
+                  Pay with Cash on Delivery
                 </Button>
                 <p className="mt-3 text-center text-xs text-muted-foreground">
                   By checking out, you agree to our{' '}

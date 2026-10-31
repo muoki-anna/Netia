@@ -239,7 +239,7 @@ export async function getProductQuantities({ product_ids = [] } = {}) {
  * Create a pending order in `store_orders` through the backend.
  * Returns the order record.
  */
-export async function createOrder({ items, customer, currency = "KES" }) {
+export async function createOrder({ items, customer, currency = "KES", paymentMethod = "cash" }) {
   if (!Array.isArray(items) || items.length === 0) {
     throw new Error("Cannot create an order with no items");
   }

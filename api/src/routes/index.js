@@ -4,6 +4,7 @@ import subscriptionsRouter from './ecommerce/subscriptions.js';
 import mpesaRouter from './mpesa.js';
 import ordersRouter from './orders.js';
 import authMiddleware from '../middleware/auth.js';
+import paymentsRouter from './payments.js';
 
 const router = Router();
 

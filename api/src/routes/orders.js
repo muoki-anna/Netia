@@ -8,7 +8,7 @@ const router = Router();
 // The server holds the PocketBase superuser credentials, so the browser
 // never needs write access to `store_orders`.
 router.post('/', async (req, res) => {
-	const { items_snapshot, total_in_cents, currency, customer_email, customer_name, user } = req.body ?? {};
+	const { items_snapshot, total_in_cents, currency, customer_email, customer_name, user, paymentMethod = 'cash' } = req.body ?? {};
 
 	if (!Array.isArray(items_snapshot) || items_snapshot.length === 0) {
 		return res.status(422).json({ error: 'items_snapshot is required' });

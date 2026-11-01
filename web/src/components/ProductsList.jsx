@@ -2,10 +2,11 @@ import React, { useCallback, useMemo, useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { ShoppingCart, Loader2 } from 'lucide-react';
+import { ShoppingCart, Loader2, Zap } from 'lucide-react';
 import { useCart } from '@/hooks/useCart';
 import { useToast } from '@/hooks/use-toast';
 import { getProducts, getProductQuantities } from '@/api/StoreApi';
+import CashOrderDialog from '@/components/CashOrderDialog';
 
 export const STORE_CATEGORIES = [
   { id: 'all', label: 'All Products' },
@@ -42,6 +43,8 @@ const ProductCard = ({ product, index }) => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
+  const [isBuyNowOpen, setIsBuyNowOpen] = useState(false);
+
   const displayVariant = useMemo(() => product.variants[0], [product]);
   const hasSale = useMemo(() => displayVariant && displayVariant.sale_price_in_cents !== null, [displayVariant]);
   const displayPrice = useMemo(() => hasSale ? displayVariant.sale_price_formatted : displayVariant.price_formatted, [displayVariant, hasSale]);
@@ -74,6 +77,29 @@ const ProductCard = ({ product, index }) => {
     }
   }, [product, addToCart, toast, navigate]);
 
+  const handleBuyNow = useCallback((e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    // If multiple variants, go to product page to pick one first
+    if (product.variants.length > 1) {
+      navigate(`/product/${product.id}`);
+      return;
+    }
+    setIsBuyNowOpen(true);
+  }, [product, navigate]);
+
+  const buyNowItems = useMemo(() => [{
+    title: product.title,
+    variant: displayVariant?.title || 'Default',
+    quantity: 1,
+    price_in_cents: displayVariant?.sale_price_in_cents ?? displayVariant?.price_in_cents,
+  }], [product, displayVariant]);
+
+  const buyNowTotal = useMemo(() =>
+    Math.round((displayVariant?.sale_price_in_cents ?? displayVariant?.price_in_cents ?? 0) / 100),
+    [displayVariant]
+  );
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -97,6 +123,17 @@ const ProductCard = ({ product, index }) => {
                 {product.ribbon_text}
               </span>
             )}
+            {/* Buy Now overlay on image hover */}
+            <div className="absolute inset-0 flex items-end justify-center pb-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+              <Button
+                onClick={handleBuyNow}
+                size="sm"
+                className="bg-white text-primary border border-primary hover:bg-primary hover:text-white font-semibold shadow-lg px-5"
+              >
+                <Zap className="mr-1.5 h-3.5 w-3.5" />
+                Buy Now
+              </Button>
+            </div>
           </div>
           <div className="flex flex-1 flex-col p-5">
             <h3 className="font-display text-lg font-600 text-card-foreground">{product.title}</h3>
@@ -108,13 +145,32 @@ const ProductCard = ({ product, index }) => {
                 {hasSale && <span className="text-sm text-muted-foreground line-through">{originalPrice}</span>}
                 <span className="text-lg font-bold text-primary">{displayPrice}</span>
               </div>
-              <Button onClick={handleAddToCart} size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90">
-                <ShoppingCart className="mr-1.5 h-4 w-4" /> Add
-              </Button>
+              <div className="flex gap-2">
+                <Button onClick={handleAddToCart} size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90">
+                  <ShoppingCart className="mr-1.5 h-4 w-4" /> Add
+                </Button>
+                <Button
+                  onClick={handleBuyNow}
+                  size="sm"
+                  variant="outline"
+                  className="border-primary text-primary hover:bg-primary hover:text-white"
+                >
+                  <Zap className="mr-1 h-3.5 w-3.5" /> Buy
+                </Button>
+              </div>
             </div>
           </div>
         </div>
       </Link>
+
+      {/* Buy Now → Cash on Delivery dialog (no account needed) */}
+      <CashOrderDialog
+        open={isBuyNowOpen}
+        onOpenChange={setIsBuyNowOpen}
+        items={buyNowItems}
+        totalKes={buyNowTotal}
+        onSuccess={() => setIsBuyNowOpen(false)}
+      />
     </motion.div>
   );
 };

@@ -6,7 +6,7 @@ import { ShoppingCart, Loader2, Zap } from 'lucide-react';
 import { useCart } from '@/hooks/useCart';
 import { useToast } from '@/hooks/use-toast';
 import { getProducts, getProductQuantities } from '@/api/StoreApi';
-import CashOrderDialog from '@/components/CashOrderDialog';
+import BuyNowDialog from '@/components/BuyNowDialog';
 
 export const STORE_CATEGORIES = [
   { id: 'all', label: 'All Products' },
@@ -163,8 +163,8 @@ const ProductCard = ({ product, index }) => {
         </div>
       </Link>
 
-      {/* Buy Now → Cash on Delivery dialog (no account needed) */}
-      <CashOrderDialog
+      {/* Buy Now → payment method picker (no account needed) */}
+      <BuyNowDialog
         open={isBuyNowOpen}
         onOpenChange={setIsBuyNowOpen}
         items={buyNowItems}

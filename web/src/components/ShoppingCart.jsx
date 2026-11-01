@@ -1,13 +1,14 @@
 import React, { useCallback, useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
-import { ShoppingCart as ShoppingCartIcon, X, Smartphone } from 'lucide-react';
+import { ShoppingCart as ShoppingCartIcon, X, Smartphone, Banknote } from 'lucide-react';
 import { useCart } from '@/hooks/useCart';
 import { Button } from '@/components/ui/button';
 import { createOrder, getProductQuantities } from '@/api/StoreApi';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import MpesaPaymentDialog from '@/components/MpesaPaymentDialog';
+import CashOrderDialog from '@/components/CashOrderDialog';
 
 const ShoppingCart = ({ isCartOpen, setIsCartOpen }) => {
   const { toast } = useToast();
@@ -15,6 +16,7 @@ const ShoppingCart = ({ isCartOpen, setIsCartOpen }) => {
   const { currentUser } = useAuth();
   const { cartItems, removeFromCart, updateQuantity, getCartTotal, clearCart } = useCart();
   const [isMpesaOpen, setIsMpesaOpen] = useState(false);
+  const [isCashOpen, setIsCashOpen] = useState(false);
   const [pendingOrder, setPendingOrder] = useState(null);
 
   const hasSubscriptionInCart = useMemo(
@@ -31,30 +33,58 @@ const ShoppingCart = ({ isCartOpen, setIsCartOpen }) => {
     );
   }, [cartItems]);
 
-  const handleMpesaClick = useCallback(() => {
+  const cartItemsForDialog = useMemo(() =>
+    cartItems.map(item => ({
+      title: item.product.title,
+      variant: item.variant.title,
+      quantity: item.quantity,
+      price_in_cents: item.variant.sale_price_in_cents ?? item.variant.price_in_cents,
+    })),
+    [cartItems]
+  );
+
+  // ── Guard helper ──────────────────────────────────────────────────────────
+  const guardCart = useCallback(() => {
     if (cartItems.length === 0) {
       toast({
         title: 'Your cart is empty',
         description: 'Add some products to your cart before checking out.',
         variant: 'destructive',
       });
-      return;
+      return false;
     }
-
     if (hasSubscriptionInCart && !currentUser) {
       toast({
         title: 'Please sign in',
-        description: 'You need an account to purchase a subscription. Sign in or create one to continue.',
+        description: 'You need an account to purchase a subscription.',
         variant: 'destructive',
       });
       setIsCartOpen(false);
       navigate('/login');
-      return;
+      return false;
     }
-
-    setIsMpesaOpen(true);
+    return true;
   }, [cartItems, hasSubscriptionInCart, currentUser, toast, navigate, setIsCartOpen]);
 
+  // ── M-Pesa (quick open) ───────────────────────────────────────────────────
+  const handleMpesaClick = useCallback(() => {
+    if (!guardCart()) return;
+    setIsMpesaOpen(true);
+  }, [guardCart]);
+
+  // ── Cash on Delivery ──────────────────────────────────────────────────────
+  const handleCashClick = useCallback(() => {
+    if (!guardCart()) return;
+    setIsCashOpen(true);
+  }, [guardCart]);
+
+  const handleCashSuccess = useCallback(() => {
+    clearCart();
+    setIsCashOpen(false);
+    setIsCartOpen(false);
+  }, [clearCart, setIsCartOpen]);
+
+  // ── M-Pesa success ────────────────────────────────────────────────────────
   const handleMpesaSuccess = useCallback(() => {
     clearCart();
     setPendingOrder(null);
@@ -62,30 +92,9 @@ const ShoppingCart = ({ isCartOpen, setIsCartOpen }) => {
     navigate('/success');
   }, [clearCart, navigate, setIsCartOpen]);
 
+  // ── Proceed to Checkout (creates order then opens M-Pesa) ─────────────────
   const handleCheckout = useCallback(async () => {
-    if (cartItems.length === 0) {
-      toast({
-        title: 'Your cart is empty',
-        description: 'Add some products to your cart before checking out.',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    const hasSubscription = cartItems.some(
-      item => item.product?.type?.value === 'subscription'
-    );
-
-    if (hasSubscription && !currentUser) {
-      toast({
-        title: 'Please sign in',
-        description: 'You need an account to purchase a subscription. Sign in or create one to continue.',
-        variant: 'destructive',
-      });
-      setIsCartOpen(false);
-      navigate('/login');
-      return;
-    }
+    if (!guardCart()) return;
 
     const items = cartItems
       .filter(item => item?.variant?.id)
@@ -103,9 +112,6 @@ const ShoppingCart = ({ isCartOpen, setIsCartOpen }) => {
       return;
     }
 
-    // Reconcile the persisted cart against the live catalogue so stale variant
-    // ids (after a catalogue update) are dropped automatically instead of
-    // failing the whole checkout with an "out of date" error.
     let validItems = items;
     try {
       const productIds = [...new Set(
@@ -132,7 +138,6 @@ const ShoppingCart = ({ isCartOpen, setIsCartOpen }) => {
             });
             return;
           }
-
           toast({
             title: 'Cart updated',
             description: 'Some outdated items were removed from your cart. Continuing checkout with the remaining items.',
@@ -140,13 +145,9 @@ const ShoppingCart = ({ isCartOpen, setIsCartOpen }) => {
         }
       }
     } catch (validationError) {
-      // If validation itself fails (e.g. network hiccup), continue with the
-      // cart as-is rather than blocking checkout.
       console.warn('Cart validation skipped:', validationError);
     }
 
-    // Check out entirely locally: create a pending order in our own
-    // database, then open the M-Pesa payment dialog. No Hostinger checkout.
     let storeOrder = null;
     try {
       const customer = currentUser
@@ -166,7 +167,7 @@ const ShoppingCart = ({ isCartOpen, setIsCartOpen }) => {
 
     setPendingOrder(storeOrder);
     setIsMpesaOpen(true);
-  }, [cartItems, clearCart, removeFromCart, toast, currentUser, navigate, setIsCartOpen]);
+  }, [cartItems, guardCart, clearCart, removeFromCart, toast, currentUser, navigate, setIsCartOpen]);
 
   return (
     <AnimatePresence>
@@ -192,6 +193,7 @@ const ShoppingCart = ({ isCartOpen, setIsCartOpen }) => {
                 <X />
               </Button>
             </div>
+
             <div className="flex-grow p-6 overflow-y-auto space-y-4">
               {cartItems.length === 0 ? (
                 <div className="text-center text-muted-foreground h-full flex flex-col items-center justify-center">
@@ -221,20 +223,26 @@ const ShoppingCart = ({ isCartOpen, setIsCartOpen }) => {
                 ))
               )}
             </div>
+
             {cartItems.length > 0 && (
-              <div className="p-6 border-t border-border">
-                <div className="flex justify-between items-center mb-4 text-card-foreground">
+              <div className="p-6 border-t border-border space-y-3">
+                <div className="flex justify-between items-center text-card-foreground">
                   <span className="text-lg font-medium">Total</span>
                   <span className="text-2xl font-bold">{getCartTotal()}</span>
                 </div>
+
+                {/* Proceed to Checkout → M-Pesa dialog */}
                 <Button onClick={handleCheckout} className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-3 text-base">
                   Proceed to Checkout
                 </Button>
-                <div className="my-3 flex items-center gap-3">
+
+                <div className="flex items-center gap-3">
                   <div className="h-px flex-1 bg-border" />
-                  <span className="text-xs text-muted-foreground">or</span>
+                  <span className="text-xs text-muted-foreground">or pay with</span>
                   <div className="h-px flex-1 bg-border" />
                 </div>
+
+                {/* Pay with M-Pesa Till */}
                 <Button
                   onClick={handleMpesaClick}
                   variant="outline"
@@ -243,7 +251,18 @@ const ShoppingCart = ({ isCartOpen, setIsCartOpen }) => {
                   <Smartphone className="h-4 w-4" />
                   Pay with M-Pesa Till
                 </Button>
-                <p className="mt-3 text-center text-xs text-muted-foreground">
+
+                {/* Pay with Cash on Delivery */}
+                <Button
+                  onClick={handleCashClick}
+                  variant="outline"
+                  className="w-full border-green-600 text-green-700 hover:bg-green-50 font-semibold py-3 text-base flex items-center justify-center gap-2"
+                >
+                  <Banknote className="h-4 w-4" />
+                  Pay with Cash on Delivery
+                </Button>
+
+                <p className="text-center text-xs text-muted-foreground">
                   By checking out, you agree to our{' '}
                   <Link to="/terms-of-service" onClick={() => setIsCartOpen(false)} className="text-primary underline underline-offset-2">
                     Terms of Service
@@ -258,22 +277,29 @@ const ShoppingCart = ({ isCartOpen, setIsCartOpen }) => {
           </motion.div>
         </motion.div>
       )}
+
+      {/* M-Pesa Dialog */}
       <MpesaPaymentDialog
         open={isMpesaOpen}
         onOpenChange={setIsMpesaOpen}
         amount={cartTotalKes}
         orderType={hasSubscriptionInCart ? 'subscription' : 'product'}
-        items={cartItems.map(item => ({
-          title: item.product.title,
-          variant: item.variant.title,
-          quantity: item.quantity,
-          price_in_cents: item.variant.sale_price_in_cents ?? item.variant.price_in_cents,
-        }))}
+        items={cartItemsForDialog}
         email={currentUser?.email || ''}
         name={currentUser?.name || ''}
         userId={currentUser?.id || null}
         storeOrderId={pendingOrder?.id || null}
         onSuccess={handleMpesaSuccess}
+      />
+
+      {/* Cash on Delivery Dialog */}
+      <CashOrderDialog
+        open={isCashOpen}
+        onOpenChange={setIsCashOpen}
+        items={cartItemsForDialog}
+        totalKes={cartTotalKes}
+        prefillName={currentUser?.name || ''}
+        onSuccess={handleCashSuccess}
       />
     </AnimatePresence>
   );

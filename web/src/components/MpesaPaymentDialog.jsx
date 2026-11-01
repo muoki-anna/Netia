@@ -12,6 +12,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import apiServerClient from '@/lib/apiServerClient';
 
+const WHATSAPP_NUMBER = '254724471075';
+
 const POLL_INTERVAL_MS = 3000;
 const MAX_POLLS = 60; // ~180s
 
@@ -38,6 +40,8 @@ export default function MpesaPaymentDialog({
   onSuccess,
 }) {
   const [phone, setPhone] = useState('');
+  const [customerName, setCustomerName] = useState(name);
+  const [location, setLocation] = useState('');
   const [stage, setStage] = useState('form'); // form | waiting | success | error
   const [errorMessage, setErrorMessage] = useState('');
   const pollRef = useRef(null);
@@ -58,6 +62,35 @@ export default function MpesaPaymentDialog({
     onOpenChange(false);
   }, [onOpenChange]);
 
+  const sendWhatsApp = useCallback(() => {
+    const itemLines = items
+      .map((i) => {
+        const price = i.price_in_cents != null
+          ? `KES ${(i.price_in_cents / 100).toLocaleString()}`
+          : '';
+        return `  • ${i.quantity}x ${i.title}${i.variant && i.variant !== 'Default' ? ` (${i.variant})` : ''} ${price}`;
+      })
+      .join('\n');
+
+    const message = [
+      '📱 *New M-Pesa Order*',
+      '',
+      `*Customer:* ${customerName || name}`,
+      `*Phone:* ${phone}`,
+      location ? `*Delivery Location:* ${location}` : '',
+      '',
+      '*Items:*',
+      itemLines,
+      '',
+      `*Total: KES ${Number(amount).toLocaleString()}*`,
+      '',
+      '_Payment: M-Pesa Till_',
+    ].filter(Boolean).join('\n');
+
+    const waUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
+    window.open(waUrl, '_blank', 'noopener,noreferrer');
+  }, [customerName, name, phone, location, items, amount]);
+
   const pollStatus = useCallback((checkoutRequestId) => {
     pollRef.current = setInterval(async () => {
       pollCountRef.current += 1;
@@ -68,6 +101,7 @@ export default function MpesaPaymentDialog({
           const data = await res.json();
           if (data.status === 'paid') {
             clearInterval(pollRef.current);
+            sendWhatsApp();
             resetAndClose();
             onSuccess?.(data);
             return;
@@ -89,7 +123,7 @@ export default function MpesaPaymentDialog({
         setErrorMessage('We have not received confirmation yet. If you approved the prompt, your order will still be processed — check your M-Pesa messages.');
       }
     }, POLL_INTERVAL_MS);
-  }, [onSuccess]);
+  }, [onSuccess, sendWhatsApp]);
 
   const handleSubmit = useCallback(async (e) => {
     e.preventDefault();
@@ -150,6 +184,17 @@ export default function MpesaPaymentDialog({
         {stage === 'form' && (
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
+              <Label htmlFor="mpesa-name">Full Name</Label>
+              <Input
+                id="mpesa-name"
+                type="text"
+                placeholder="John Doe"
+                value={customerName}
+                onChange={(e) => setCustomerName(e.target.value)}
+                required
+              />
+            </div>
+            <div className="space-y-2">
               <Label htmlFor="mpesa-phone">M-Pesa phone number</Label>
               <Input
                 id="mpesa-phone"
@@ -158,6 +203,17 @@ export default function MpesaPaymentDialog({
                 placeholder="07XXXXXXXX"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="mpesa-location">Delivery Location</Label>
+              <Input
+                id="mpesa-location"
+                type="text"
+                placeholder="e.g. Nairobi, Westlands, House No. 12"
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
                 required
               />
             </div>

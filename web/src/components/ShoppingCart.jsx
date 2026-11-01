@@ -231,11 +231,14 @@ const ShoppingCart = ({ isCartOpen, setIsCartOpen }) => {
                   <span className="text-2xl font-bold">{getCartTotal()}</span>
                 </div>
 
-                {/* Proceed to Pay indicator */}
-                <div className="pt-2 pb-1 text-center">
-                  <p className="text-sm font-semibold tracking-wide uppercase text-primary">
-                    Proceed to pay with:
-                  </p>
+                {/* Proceed to Pay badge/sign */}
+                <div className="flex items-center justify-center pt-2 pb-1">
+                  <div className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-green-50 border border-green-600/30 text-green-700 shadow-sm">
+                    <span className="w-2 h-2 rounded-full bg-green-600 animate-pulse" />
+                    <span className="text-sm font-bold tracking-wider uppercase">
+                      Proceed to Pay
+                    </span>
+                  </div>
                 </div>
 
                 {/* Pay with M-Pesa Till */}
@@ -295,6 +298,8 @@ const ShoppingCart = ({ isCartOpen, setIsCartOpen }) => {
         items={cartItemsForDialog}
         totalKes={cartTotalKes}
         prefillName={currentUser?.name || ''}
+        prefillEmail={currentUser?.email || ''}
+        userId={currentUser?.id || null}
         onSuccess={handleCashSuccess}
       />
     </AnimatePresence>

@@ -4,11 +4,21 @@ import logger from '../utils/logger.js';
 
 const router = Router();
 
-// POST /orders — create a pending order from a checkout payload.
+// POST /orders — create a pending or cash order from a checkout payload.
 // The server holds the PocketBase superuser credentials, so the browser
 // never needs write access to `store_orders`.
 router.post('/', async (req, res) => {
-	const { items_snapshot, total_in_cents, currency, customer_email, customer_name, user } = req.body ?? {};
+	const {
+		items_snapshot,
+		total_in_cents,
+		currency,
+		customer_email,
+		customer_name,
+		user,
+		delivery_location,
+		phone,
+		payment_method,
+	} = req.body ?? {};
 
 	if (!Array.isArray(items_snapshot) || items_snapshot.length === 0) {
 		return res.status(422).json({ error: 'items_snapshot is required' });
@@ -18,15 +28,24 @@ router.post('/', async (req, res) => {
 	}
 
 	try {
-		const order = await pocketbaseClient.collection('store_orders').create({
-			items_snapshot,
+		const payload = {
+			items_snapshot: {
+				items: items_snapshot,
+				payment_method: payment_method || 'cash',
+				delivery_location: delivery_location || '',
+				phone: phone || '',
+			},
 			total_in_cents: Number(total_in_cents),
 			currency: currency || 'KES',
 			status: 'pending',
 			customer_email: customer_email || '',
 			customer_name: customer_name || '',
+			phone: phone || '',
+			delivery_location: delivery_location || '',
 			user: user || null,
-		});
+		};
+
+		const order = await pocketbaseClient.collection('store_orders').create(payload);
 
 		res.status(201).json(order);
 	} catch (err) {

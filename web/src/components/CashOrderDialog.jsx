@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { Banknote, CheckCircle2 } from 'lucide-react';
+import { Banknote, CheckCircle2, Loader2 } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -10,20 +10,14 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { apiServerClient } from '@/lib/apiServerClient';
 
 const WHATSAPP_NUMBER = '254724471075';
 
 /**
  * Cash on Delivery dialog.
- * Collects customer name, phone, and delivery location then
- * opens WhatsApp with a pre-filled order summary message.
- *
- * Props:
- * - open, onOpenChange
- * - items: [{ title, variant, quantity, price_in_cents }]
- * - totalKes: number
- * - prefillName, prefillEmail: optional strings from auth context
- * - onSuccess: called after WhatsApp is opened
+ * Saves the order to PocketBase (via backend /orders) so it shows in the dashboard,
+ * then opens WhatsApp with pre-filled details for the customer.
  */
 export default function CashOrderDialog({
   open,
@@ -31,26 +25,71 @@ export default function CashOrderDialog({
   items = [],
   totalKes = 0,
   prefillName = '',
+  prefillEmail = '',
+  userId = null,
   onSuccess,
 }) {
   const [name, setName] = useState(prefillName);
   const [phone, setPhone] = useState('');
   const [location, setLocation] = useState('');
+  const [submitting, setSubmitting] = useState(false);
   const [stage, setStage] = useState('form'); // form | done
+  const [createdOrderId, setCreatedOrderId] = useState(null);
 
   const resetAndClose = useCallback(() => {
     setStage('form');
     setPhone('');
     setLocation('');
     setName(prefillName);
+    setCreatedOrderId(null);
+    setSubmitting(false);
     onOpenChange(false);
   }, [onOpenChange, prefillName]);
 
   const handleSubmit = useCallback(
-    (e) => {
+    async (e) => {
       e.preventDefault();
+      setSubmitting(true);
 
-      // Build the WhatsApp message
+      let orderId = null;
+
+      // 1. Save the order to PocketBase through the backend
+      try {
+        const itemsSnapshot = items.map((i) => ({
+          title: i.title,
+          variant: i.variant,
+          quantity: i.quantity,
+          unit_price_in_cents: i.price_in_cents || 0,
+        }));
+
+        const totalInCents = Math.round(Number(totalKes) * 100);
+
+        const res = await apiServerClient.fetch('/orders', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            items_snapshot: itemsSnapshot,
+            total_in_cents: totalInCents,
+            currency: 'KES',
+            customer_email: prefillEmail || '',
+            customer_name: name || '',
+            user: userId || null,
+            phone: phone || '',
+            delivery_location: location || '',
+            payment_method: 'cash',
+          }),
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          orderId = data?.id;
+          setCreatedOrderId(orderId);
+        }
+      } catch (err) {
+        console.warn('Could not record cash order in database:', err);
+      }
+
+      // 2. Build the WhatsApp message
       const itemLines = items
         .map((i) => {
           const price = i.price_in_cents != null
@@ -62,6 +101,7 @@ export default function CashOrderDialog({
 
       const message = [
         '🛒 *New Cash on Delivery Order*',
+        orderId ? `*Order ID:* ${orderId}` : '',
         '',
         `*Customer:* ${name}`,
         `*Phone:* ${phone}`,
@@ -73,15 +113,16 @@ export default function CashOrderDialog({
         `*Total: KES ${Number(totalKes).toLocaleString()}*`,
         '',
         '_Payment: Cash on Delivery_',
-      ].join('\n');
+      ].filter(Boolean).join('\n');
 
       const waUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
       window.open(waUrl, '_blank', 'noopener,noreferrer');
 
+      setSubmitting(false);
       setStage('done');
       onSuccess?.();
     },
-    [name, phone, location, items, totalKes, onSuccess]
+    [name, phone, location, items, totalKes, prefillEmail, userId, onSuccess]
   );
 
   return (
@@ -94,7 +135,7 @@ export default function CashOrderDialog({
           </DialogTitle>
           <DialogDescription>
             {stage === 'form' &&
-              `Fill in your details and we'll confirm your order of KES ${Number(totalKes).toLocaleString()} via WhatsApp.`}
+              `Fill in your delivery details to confirm your order of KES ${Number(totalKes).toLocaleString()}.`}
           </DialogDescription>
         </DialogHeader>
 
@@ -139,9 +180,17 @@ export default function CashOrderDialog({
 
             <Button
               type="submit"
-              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
+              disabled={submitting}
+              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold flex items-center justify-center gap-2"
             >
-              Confirm Order via WhatsApp
+              {submitting ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Processing Order...
+                </>
+              ) : (
+                'Confirm Order via WhatsApp'
+              )}
             </Button>
           </form>
         )}
@@ -149,9 +198,14 @@ export default function CashOrderDialog({
         {stage === 'done' && (
           <div className="flex flex-col items-center gap-3 py-6 text-center">
             <CheckCircle2 className="h-10 w-10 text-primary" />
-            <p className="text-foreground font-medium">Order sent to WhatsApp!</p>
+            <p className="text-foreground font-medium">Order Confirmed!</p>
+            {createdOrderId && (
+              <p className="text-xs text-muted-foreground font-mono">
+                Order Ref: #{createdOrderId}
+              </p>
+            )}
             <p className="text-sm text-muted-foreground">
-              We've opened WhatsApp with your order details. Our team will confirm your delivery shortly.
+              Your order has been recorded and WhatsApp has opened with your order details.
             </p>
             <Button
               onClick={resetAndClose}
@@ -165,4 +219,3 @@ export default function CashOrderDialog({
     </Dialog>
   );
 }
-

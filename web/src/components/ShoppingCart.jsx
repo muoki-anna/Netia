@@ -231,15 +231,11 @@ const ShoppingCart = ({ isCartOpen, setIsCartOpen }) => {
                   <span className="text-2xl font-bold">{getCartTotal()}</span>
                 </div>
 
-                {/* Proceed to Checkout → M-Pesa dialog */}
-                <Button onClick={handleCheckout} className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-3 text-base">
-                  Proceed to Checkout
-                </Button>
-
-                <div className="flex items-center gap-3">
-                  <div className="h-px flex-1 bg-border" />
-                  <span className="text-xs text-muted-foreground">or pay with</span>
-                  <div className="h-px flex-1 bg-border" />
+                {/* Proceed to Pay indicator */}
+                <div className="pt-2 pb-1 text-center">
+                  <p className="text-sm font-semibold tracking-wide uppercase text-primary">
+                    Proceed to pay with:
+                  </p>
                 </div>
 
                 {/* Pay with M-Pesa Till */}

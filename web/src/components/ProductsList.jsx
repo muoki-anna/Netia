@@ -113,6 +113,7 @@ const ProductCard = ({ product, index }) => {
             <img
               src={product.image || placeholderImage}
               alt={product.title}
+              loading="lazy"
               className="h-56 w-full object-cover transition-transform duration-500 group-hover:scale-105"
             />
             <span className={`absolute top-3 left-3 rounded-full px-3 py-1 text-xs font-semibold text-white shadow ${isService ? 'bg-accent' : 'bg-primary'}`}>

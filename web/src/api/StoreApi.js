@@ -8,6 +8,18 @@
 import pocketbaseClient from '@/lib/pocketbaseClient';
 import { apiServerClient } from '@/lib/apiServerClient';
 
+const PUBLIC_PB_URL = 'https://pb.netiaxke.com';
+
+/**
+ * Replaces any localhost/127.0.0.1 PocketBase origin in a URL with the
+ * public domain so product images load correctly in the browser instead
+ * of timing out trying to connect to the server's own loopback address.
+ */
+const fixImageUrl = (url) => {
+  if (!url) return '';
+  return url.replace(/https?:\/\/(127\.0\.0\.1|localhost)(:\d+)?/g, PUBLIC_PB_URL);
+};
+
 export const formatCurrency = (priceInCents, currencyInfo) => {
   if (!currencyInfo || priceInCents === null || priceInCents === undefined) {
     return "";
@@ -53,7 +65,7 @@ const extractProductOptions = (options) =>
 
 const extractImages = (images) =>
   (images || []).map((img) => ({
-    url: img?.url || "",
+    url: fixImageUrl(img?.url || ""),
     order: img?.order || 0,
     type: img?.type || "",
   }));
@@ -79,7 +91,7 @@ const mapVariant = (record) => {
   return {
     id: record.id,
     title: record.title || "",
-    image_url: record.image_url || null,
+    image_url: fixImageUrl(record.image_url || null),
     sku: record.sku || null,
     price_in_cents: record.price_in_cents || 0,
     sale_price_in_cents: record.sale_price_in_cents || null,
@@ -108,7 +120,7 @@ const mapProduct = (record) => {
     subtitle: record.subtitle || "",
     ribbon_text: record.ribbon_text || "",
     description: record.description || "",
-    image: record.thumbnail_url || "",
+    image: fixImageUrl(record.thumbnail_url || ""),
     price_in_cents: priceInCents,
     currency: purchasableVariant?.currency || "KES",
     price_formatted: formatCurrency(priceInCents, DEFAULT_CURRENCY_INFO),

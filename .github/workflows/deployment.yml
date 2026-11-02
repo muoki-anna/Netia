@@ -14,6 +14,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # Prevent overwriting the server's live database during deployment
+      - name: Exclude live database from deployment sync
+        run: rm -rf pocketbase/pb_data
+
       - name: Copy files via SCP
         uses: appleboy/scp-action@master
         with:

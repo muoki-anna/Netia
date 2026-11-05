@@ -61,16 +61,17 @@ export async function initiateStkPush({ phone, amount, accountReference, transac
 	const till = requireEnv('MPESA_TILL_NUMBER');
 	const passkey = requireEnv('MPESA_PASSKEY');
 	const callbackUrl = requireEnv('MPESA_CALLBACK_URL');
+	const shortCode = process.env.MPESA_STORE_NUMBER || till;
 
 	const accessToken = await getMpesaAccessToken();
 	const timestamp = timestampNow();
-	const password = Buffer.from(`${till}${passkey}${timestamp}`).toString('base64');
+	const password = Buffer.from(`${shortCode}${passkey}${timestamp}`).toString('base64');
 
 	const payload = {
-		BusinessShortCode: till,
+		BusinessShortCode: shortCode,
 		Password: password,
 		Timestamp: timestamp,
-		TransactionType: 'CustomerPayBillOnline',
+		TransactionType: 'CustomerBuyGoodsOnline',
 		Amount: Math.max(1, Math.round(amount)),
 		PartyA: phone,
 		PartyB: till,
@@ -106,10 +107,11 @@ export async function initiateStkPush({ phone, amount, accountReference, transac
 export async function queryStkStatus(checkoutRequestId) {
 	const till = requireEnv('MPESA_TILL_NUMBER');
 	const passkey = requireEnv('MPESA_PASSKEY');
+	const shortCode = process.env.MPESA_STORE_NUMBER || till;
 
 	const accessToken = await getMpesaAccessToken();
 	const timestamp = timestampNow();
-	const password = Buffer.from(`${till}${passkey}${timestamp}`).toString('base64');
+	const password = Buffer.from(`${shortCode}${passkey}${timestamp}`).toString('base64');
 
 	const response = await fetch(`${BASE_URL}/mpesa/stkpushquery/v1/query`, {
 		method: 'POST',
@@ -118,7 +120,7 @@ export async function queryStkStatus(checkoutRequestId) {
 			'Content-Type': 'application/json',
 		},
 		body: JSON.stringify({
-			BusinessShortCode: till,
+			BusinessShortCode: shortCode,
 			Password: password,
 			Timestamp: timestamp,
 			CheckoutRequestID: checkoutRequestId,

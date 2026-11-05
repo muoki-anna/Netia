@@ -14,8 +14,8 @@ import apiServerClient from '@/lib/apiServerClient';
 
 const WHATSAPP_NUMBER = '254724471075';
 
-const POLL_INTERVAL_MS = 3000;
-const MAX_POLLS = 60; // ~180s
+const POLL_INTERVAL_MS = 5000;
+const MAX_POLLS = 36; // ~180s
 
 /**
  * M-Pesa Till payment dialog.

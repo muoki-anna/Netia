@@ -58,10 +58,9 @@ export function normalizeKenyanPhone(rawPhone) {
 }
 
 export async function initiateStkPush({ phone, amount, accountReference, transactionDesc }) {
-	const till = requireEnv('MPESA_TILL_NUMBER');
+	const shortCode = process.env.MPESA_SHORTCODE || process.env.MPESA_TILL_NUMBER || requireEnv('MPESA_SHORTCODE');
 	const passkey = requireEnv('MPESA_PASSKEY');
 	const callbackUrl = requireEnv('MPESA_CALLBACK_URL');
-	const shortCode = process.env.MPESA_STORE_NUMBER || till;
 
 	const accessToken = await getMpesaAccessToken();
 	const timestamp = timestampNow();
@@ -71,10 +70,10 @@ export async function initiateStkPush({ phone, amount, accountReference, transac
 		BusinessShortCode: shortCode,
 		Password: password,
 		Timestamp: timestamp,
-		TransactionType: 'CustomerBuyGoodsOnline',
+		TransactionType: 'CustomerPayBillOnline',
 		Amount: Math.max(1, Math.round(amount)),
 		PartyA: phone,
-		PartyB: till,
+		PartyB: shortCode,
 		PhoneNumber: phone,
 		CallBackURL: callbackUrl,
 		AccountReference: accountReference.slice(0, 12),
@@ -105,9 +104,8 @@ export async function initiateStkPush({ phone, amount, accountReference, transac
 }
 
 export async function queryStkStatus(checkoutRequestId) {
-	const till = requireEnv('MPESA_TILL_NUMBER');
+	const shortCode = process.env.MPESA_SHORTCODE || process.env.MPESA_TILL_NUMBER || requireEnv('MPESA_SHORTCODE');
 	const passkey = requireEnv('MPESA_PASSKEY');
-	const shortCode = process.env.MPESA_STORE_NUMBER || till;
 
 	const accessToken = await getMpesaAccessToken();
 	const timestamp = timestampNow();

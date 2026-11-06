@@ -22,12 +22,15 @@ router.post('/stkpush', async (req, res) => {
 		return res.status(422).json({ error: 'Enter a valid Safaricom phone number, e.g. 0712345678' });
 	}
 
-	const missingConfig = ['MPESA_CONSUMER_KEY', 'MPESA_CONSUMER_SECRET', 'MPESA_TILL_NUMBER', 'MPESA_PASSKEY', 'MPESA_CALLBACK_URL']
+	const hasShortcode = process.env.MPESA_SHORTCODE || process.env.MPESA_TILL_NUMBER;
+	const missingConfig = ['MPESA_CONSUMER_KEY', 'MPESA_CONSUMER_SECRET', 'MPESA_PASSKEY', 'MPESA_CALLBACK_URL']
 		.filter((key) => !process.env[key]);
+	if (!hasShortcode) missingConfig.push('MPESA_SHORTCODE');
+
 	if (missingConfig.length > 0) {
 		logger.error(`M-Pesa STK push cannot start — missing env vars: ${missingConfig.join(', ')}`);
 		return res.status(503).json({
-			error: 'M-Pesa payments are not configured yet. Add your Safaricom Daraja Till credentials (Consumer Key/Secret, Till Number, Passkey, Callback URL) in apps/api/.env, then try again.',
+			error: 'M-Pesa payments are not configured yet. Add your Safaricom Daraja credentials (Consumer Key/Secret, Shortcode, Passkey, Callback URL) in apps/api/.env, then try again.',
 		});
 	}
 

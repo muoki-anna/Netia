@@ -149,6 +149,7 @@ router.post('/callback', async (req, res) => {
 	}
 
 	const { CheckoutRequestID, ResultCode, ResultDesc, CallbackMetadata } = stkCallback;
+	logger.info(`M-Pesa callback: CheckoutRequestID=${CheckoutRequestID}, ResultCode=${ResultCode}, ResultDesc=${ResultDesc}`);
 
 	const results = await pocketbaseClient.collection('mpesa_orders').getFullList({
 		filter: pocketbaseClient.filter('checkout_request_id = {:id}', { id: CheckoutRequestID }),

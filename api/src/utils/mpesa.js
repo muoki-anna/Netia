@@ -58,27 +58,35 @@ export function normalizeKenyanPhone(rawPhone) {
 }
 
 export async function initiateStkPush({ phone, amount, accountReference, transactionDesc }) {
-	const shortCode = process.env.MPESA_SHORTCODE || process.env.MPESA_TILL_NUMBER || requireEnv('MPESA_SHORTCODE');
+	const tillNumber = process.env.MPESA_TILL_NUMBER || process.env.MPESA_SHORTCODE;
+	const storeNumber = process.env.MPESA_STORE_NUMBER || tillNumber;
 	const passkey = requireEnv('MPESA_PASSKEY');
 	const callbackUrl = requireEnv('MPESA_CALLBACK_URL');
+	const transactionType = process.env.MPESA_TRANSACTION_TYPE || (process.env.MPESA_TILL_NUMBER ? 'CustomerBuyGoodsOnline' : 'CustomerPayBillOnline');
+
+	if (!tillNumber) {
+		throw new Error('Neither MPESA_SHORTCODE nor MPESA_TILL_NUMBER is configured');
+	}
 
 	const accessToken = await getMpesaAccessToken();
 	const timestamp = timestampNow();
-	const password = Buffer.from(`${shortCode}${passkey}${timestamp}`).toString('base64');
+	const password = Buffer.from(`${storeNumber}${passkey}${timestamp}`).toString('base64');
 
 	const payload = {
-		BusinessShortCode: shortCode,
+		BusinessShortCode: storeNumber,
 		Password: password,
 		Timestamp: timestamp,
-		TransactionType: 'CustomerPayBillOnline',
+		TransactionType: transactionType,
 		Amount: Math.max(1, Math.round(amount)),
 		PartyA: phone,
-		PartyB: shortCode,
+		PartyB: tillNumber,
 		PhoneNumber: phone,
 		CallBackURL: callbackUrl,
 		AccountReference: accountReference.slice(0, 12),
 		TransactionDesc: transactionDesc.slice(0, 13),
 	};
+
+	logger.info(`Sending STK push: Shortcode=${storeNumber}, PartyB=${tillNumber}, Type=${transactionType}, Phone=${phone}, Amount=${amount}`);
 
 	const response = await fetch(`${BASE_URL}/mpesa/stkpush/v1/processrequest`, {
 		method: 'POST',
@@ -104,12 +112,13 @@ export async function initiateStkPush({ phone, amount, accountReference, transac
 }
 
 export async function queryStkStatus(checkoutRequestId) {
-	const shortCode = process.env.MPESA_SHORTCODE || process.env.MPESA_TILL_NUMBER || requireEnv('MPESA_SHORTCODE');
+	const tillNumber = process.env.MPESA_TILL_NUMBER || process.env.MPESA_SHORTCODE;
+	const storeNumber = process.env.MPESA_STORE_NUMBER || tillNumber;
 	const passkey = requireEnv('MPESA_PASSKEY');
 
 	const accessToken = await getMpesaAccessToken();
 	const timestamp = timestampNow();
-	const password = Buffer.from(`${shortCode}${passkey}${timestamp}`).toString('base64');
+	const password = Buffer.from(`${storeNumber}${passkey}${timestamp}`).toString('base64');
 
 	const response = await fetch(`${BASE_URL}/mpesa/stkpushquery/v1/query`, {
 		method: 'POST',
@@ -118,7 +127,7 @@ export async function queryStkStatus(checkoutRequestId) {
 			'Content-Type': 'application/json',
 		},
 		body: JSON.stringify({
-			BusinessShortCode: shortCode,
+			BusinessShortCode: storeNumber,
 			Password: password,
 			Timestamp: timestamp,
 			CheckoutRequestID: checkoutRequestId,

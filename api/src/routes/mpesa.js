@@ -7,7 +7,7 @@ const router = Router();
 
 // POST /mpesa/stkpush — start an M-Pesa till STK push for a cart/subscription checkout.
 router.post('/stkpush', async (req, res) => {
-	const { phone, amount, orderType, items, email, name, userId, storeOrderId } = req.body ?? {};
+	const { phone, amount, orderType, items, email, name, userId, storeOrderId, deliveryLocation } = req.body ?? {};
 
 	if (!phone || !amount || !orderType) {
 		return res.status(422).json({ error: 'phone, amount and orderType are required' });
@@ -44,8 +44,40 @@ router.post('/stkpush', async (req, res) => {
 		transactionDesc,
 	});
 
+	let linkedStoreOrderId = storeOrderId || null;
+	if (!linkedStoreOrderId && Array.isArray(items) && items.length > 0) {
+		try {
+			const itemsSnapshot = items.map((i) => ({
+				title: i.title,
+				variant: i.variant,
+				quantity: i.quantity,
+				unit_price_in_cents: i.price_in_cents || 0,
+			}));
+			const totalInCents = Math.round(Number(amount) * 100);
+			const createdOrder = await pocketbaseClient.collection('store_orders').create({
+				items_snapshot: {
+					items: itemsSnapshot,
+					payment_method: 'mpesa',
+					delivery_location: deliveryLocation || '',
+					phone: normalizedPhone,
+				},
+				total_in_cents: totalInCents,
+				currency: 'KES',
+				status: 'pending',
+				customer_email: email || '',
+				customer_name: name || '',
+				phone: normalizedPhone,
+				delivery_location: deliveryLocation || '',
+				user: userId || null,
+			});
+			linkedStoreOrderId = createdOrder.id;
+		} catch (err) {
+			logger.warn('Failed to auto-create store_order for mpesa stk push:', err?.message ?? err);
+		}
+	}
+
 	const order = await pocketbaseClient.collection('mpesa_orders').create({
-		store_order: storeOrderId || null,
+		store_order: linkedStoreOrderId || null,
 		checkout_request_id: stkResponse.CheckoutRequestID,
 		merchant_request_id: stkResponse.MerchantRequestID,
 		phone: normalizedPhone,

@@ -44,6 +44,7 @@ export default function MpesaPaymentDialog({
   const [location, setLocation] = useState('');
   const [stage, setStage] = useState('form'); // form | waiting | success | error
   const [errorMessage, setErrorMessage] = useState('');
+  const [paymentResult, setPaymentResult] = useState(null);
   const pollRef = useRef(null);
   const pollCountRef = useRef(0);
 
@@ -59,6 +60,7 @@ export default function MpesaPaymentDialog({
     pollCountRef.current = 0;
     setStage('form');
     setErrorMessage('');
+    setPaymentResult(null);
     onOpenChange(false);
   }, [onOpenChange]);
 
@@ -72,8 +74,11 @@ export default function MpesaPaymentDialog({
       })
       .join('\n');
 
+    const receipt = paymentResult?.mpesaReceipt ? `*M-Pesa Receipt:* ${paymentResult.mpesaReceipt}` : '';
+
     const message = [
-      '📱 *New M-Pesa Order*',
+      '✅ *M-Pesa Payment Confirmed*',
+      receipt,
       '',
       `*Customer:* ${customerName || name}`,
       `*Phone:* ${phone}`,
@@ -82,14 +87,14 @@ export default function MpesaPaymentDialog({
       '*Items:*',
       itemLines,
       '',
-      `*Total: KES ${Number(amount).toLocaleString()}*`,
+      `*Total Paid: KES ${Number(amount).toLocaleString()}*`,
       '',
-      '_Payment: M-Pesa Till_',
+      '_Payment Method: M-Pesa Till (Confirmed)_',
     ].filter(Boolean).join('\n');
 
     const waUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
     window.open(waUrl, '_blank', 'noopener,noreferrer');
-  }, [customerName, name, phone, location, items, amount]);
+  }, [customerName, name, phone, location, items, amount, paymentResult]);
 
   const pollStatus = useCallback((checkoutRequestId) => {
     pollRef.current = setInterval(async () => {
@@ -101,8 +106,8 @@ export default function MpesaPaymentDialog({
           const data = await res.json();
           if (data.status === 'paid') {
             clearInterval(pollRef.current);
-            sendWhatsApp();
-            resetAndClose();
+            setPaymentResult(data);
+            setStage('success');
             onSuccess?.(data);
             return;
           }
@@ -123,7 +128,7 @@ export default function MpesaPaymentDialog({
         setErrorMessage('We have not received confirmation yet. If you approved the prompt, your order will still be processed — check your M-Pesa messages.');
       }
     }, POLL_INTERVAL_MS);
-  }, [onSuccess, sendWhatsApp]);
+  }, [onSuccess]);
 
   const handleSubmit = useCallback(async (e) => {
     e.preventDefault();
@@ -147,7 +152,8 @@ export default function MpesaPaymentDialog({
           orderType,
           items,
           email,
-          name,
+          name: customerName || name,
+          deliveryLocation: location,
           userId,
           storeOrderId,
         }),
@@ -166,7 +172,7 @@ export default function MpesaPaymentDialog({
       setStage('error');
       setErrorMessage(err.message || 'Could not start M-Pesa payment.');
     }
-  }, [phone, amount, orderType, items, email, name, userId, storeOrderId, pollStatus]);
+  }, [phone, amount, orderType, items, email, name, customerName, location, userId, storeOrderId, pollStatus]);
 
   return (
     <Dialog open={open} onOpenChange={(next) => (!next ? resetAndClose() : onOpenChange(next))}>
@@ -218,7 +224,7 @@ export default function MpesaPaymentDialog({
               />
             </div>
             {errorMessage && <p className="text-sm text-destructive">{errorMessage}</p>}
-            <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground">
+            <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold">
               Send payment request
             </Button>
           </form>
@@ -227,21 +233,42 @@ export default function MpesaPaymentDialog({
         {stage === 'waiting' && (
           <div className="flex flex-col items-center gap-3 py-6 text-center">
             <Loader2 className="h-10 w-10 animate-spin text-primary" />
-            <p className="text-foreground font-medium">Check your phone</p>
+            <p className="text-lg font-semibold text-foreground">Check your phone</p>
             <p className="text-sm text-muted-foreground">
-              Enter your M-Pesa PIN on the prompt sent to {phone} to complete the payment of KES {Number(amount).toLocaleString()}.
+              An M-Pesa prompt has been sent to <span className="font-semibold text-foreground">{phone}</span> to pay <span className="font-semibold text-foreground">KES {Number(amount).toLocaleString()}</span>.
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Please enter your M-Pesa PIN on your phone to complete the purchase.
             </p>
           </div>
         )}
 
         {stage === 'success' && (
           <div className="flex flex-col items-center gap-3 py-6 text-center">
-            <CheckCircle2 className="h-10 w-10 text-primary" />
-            <p className="text-foreground font-medium">Payment received!</p>
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-green-100 text-green-600">
+              <CheckCircle2 className="h-8 w-8" />
+            </div>
+            <p className="text-xl font-bold text-foreground">Payment Received!</p>
+            {paymentResult?.mpesaReceipt && (
+              <div className="rounded-md border border-green-200 bg-green-50 px-3 py-1 font-mono text-sm font-semibold text-green-800">
+                Receipt: {paymentResult.mpesaReceipt}
+              </div>
+            )}
             <p className="text-sm text-muted-foreground">
-              Thank you — a confirmation has been sent to your email.
+              Amount Paid: <span className="font-semibold text-foreground">KES {Number(amount).toLocaleString()}</span>
             </p>
-            <Button onClick={resetAndClose} className="mt-2 w-full bg-primary hover:bg-primary/90 text-primary-foreground">
+            <p className="text-xs text-muted-foreground max-w-xs">
+              Your M-Pesa payment has been confirmed! Click below to send your order details and receipt directly to NetiaX on WhatsApp.
+            </p>
+
+            <Button
+              onClick={sendWhatsApp}
+              className="mt-2 w-full bg-[#25D366] hover:bg-[#20ba59] text-white font-semibold flex items-center justify-center gap-2 shadow-sm"
+            >
+              💬 Send Order to WhatsApp
+            </Button>
+
+            <Button onClick={resetAndClose} variant="ghost" className="w-full mt-1 text-muted-foreground">
               Done
             </Button>
           </div>

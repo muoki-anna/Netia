@@ -39,9 +39,7 @@ export default function BuyNowDialog({
   };
 
   const handleSuccess = () => {
-    setMethod(null);
     onSuccess?.();
-    onOpenChange(false);
   };
 
   return (
